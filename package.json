@@ -1,0 +1,14 @@
+{
+  "name": "discord-snake-game",
+  "version": "1.0.0",
+  "description": "Snake, but in Discord",
+  "main": "src/index.js",
+  "scripts": {
+    "run": "node ."
+  },
+  "author": "TurkeyDev",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.3.1"
+  }
+}
