@@ -11,6 +11,7 @@ const apple = { x: 1, y: 1 };
 var score = 0;
 
 var gameEmbed = null;
+var inGame = false;
 
 for (let y = 0; y < HEGIHT; y++) {
     for (let x = 0; x < WIDTH; x++) {
@@ -58,6 +59,10 @@ const newAppleLoc = () => {
 }
 
 const newGame = (msg) => {
+    if (inGame)
+        return;
+
+    inGame = true;
     score = 0;
     snakeLength = 1;
     snake = [{ x: 5, y: 5 }];
@@ -97,6 +102,7 @@ const step = () => {
 };
 
 const gameOver = () => {
+    inGame = false;
     const editEmbed = new Discord.MessageEmbed()
         .setColor('#0099ff')
         .setTitle('Snake Game')
@@ -167,7 +173,7 @@ client.on('ready', () => {
 
 client.on('message', msg => {
     if (msg.channel.name.includes("bot_land")) {
-        if (msg.content === '!newgame') {
+        if (msg.content === '!snake') {
             newGame(msg);
         }
     }
