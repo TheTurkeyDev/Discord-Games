@@ -35,7 +35,7 @@ class HangmanGame {
             .setTitle('Hangman')
             .setDescription(this.getDescription())
             .addField('Letters Guessed', '\u200b')
-            .addField('How To Play', "Simply react to this message using the emojis that look like letters to make a guess!")
+            .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
             .setTimestamp();
 
         msg.channel.send(embed).then(emsg => {
@@ -113,7 +113,7 @@ class HangmanGame {
                 reaction.remove();
             })
             .catch(collected => {
-                //this.gameOver();
+                this.gameOver(false);
             });
     }
 }

@@ -14,10 +14,10 @@ client.on('ready', () => {
 
 client.on('message', msg => {
     if (msg.channel.name.includes("bot_land")) {
-        if (msg.content === '!snake') {
+        if (msg.content.toLowerCase() === '!snake') {
             snakeGame.newGame(msg);
         }
-        else if (msg.content === '!hangman') {
+        else if (msg.content.toLowerCase() === '!hangman') {
             hangman.newGame(msg);
         }
     }
