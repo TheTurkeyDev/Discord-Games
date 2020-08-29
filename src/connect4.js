@@ -81,7 +81,7 @@ class Connect4 {
     }
 
     waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 60000, errors: ['time'] })
+        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 300000, errors: ['time'] })
             .then(collected => {
                 const reaction = collected.first();
                 const column = reactions[reaction.emoji.name] - 1;
