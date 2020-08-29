@@ -24,9 +24,11 @@ client.on('message', msg => {
         else if (msg.content.toLowerCase() === '!hangman') {
             hangman.newGame(msg);
         }
+        else if (msg.content.toLowerCase() === '!connect4') {
+            connect4.newGame(msg);
+        }
         else if (msg.content.toLowerCase() === '!test') {
             //minesweeper.newGame(msg);
-            connect4.newGame(msg);
         }
     }
 });
