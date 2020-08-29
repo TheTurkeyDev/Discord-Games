@@ -1,15 +1,11 @@
 const Discord = require('discord.js');
 
-const WIDTH = 15;
-const HEIGHT = 10;
+const WIDTH = 8;
+const HEIGHT = 8;
 const gameBoard = [];
-const apple = { x: 1, y: 1 };
 
-class SnakeGame {
+class MinesweeperGame {
     constructor() {
-        this.snake = [{ x: 5, y: 5 }];
-        this.snakeLength = 1;
-        this.score = 0;
         this.gameEmbed = null;
         this.inGame = false;
         for (let y = 0; y < HEIGHT; y++) {
@@ -22,40 +18,12 @@ class SnakeGame {
     gameBoardToString() {
         let str = ""
         for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
-                if (x == apple.x && y == apple.y) {
-                    str += "🍎";
-                    continue;
-                }
-
-                let flag = true;
-                for (let s = 0; s < this.snake.length; s++) {
-                    if (x == this.snake[s].x && y == this.snake[s].y) {
-                        str += "🟩";
-                        flag = false;
-                    }
-                }
-
-                if (flag)
-                    str += gameBoard[y * WIDTH + x];
+            for (let x = 0; x < WIDTH; x++) {                  
+                    str += "[" + gameBoard[y * WIDTH + x] + "](http://d12.io/a1)";
             }
             str += "\n";
         }
         return str;
-    }
-
-    isLocInSnake(pos) {
-        return this.snake.find(sPos => sPos.x == pos.x && sPos.y == pos.y);
-    };
-
-    newAppleLoc() {
-        let newApplePos = { x: 0, y: 0 };
-        do {
-            newApplePos = { x: parseInt(Math.random() * WIDTH), y: parseInt(Math.random() * HEIGHT) };
-        } while (this.isLocInSnake(newApplePos))
-
-        apple.x = newApplePos.x;
-        apple.y = newApplePos.y;
     }
 
     newGame(msg) {
@@ -63,37 +31,22 @@ class SnakeGame {
             return;
 
         this.inGame = true;
-        this.score = 0;
-        this.snakeLength = 1;
-        this.snake = [{ x: 5, y: 5 }];
-        this.newAppleLoc();
         const embed = new Discord.MessageEmbed()
             .setColor('#0099ff')
-            .setTitle('Snake Game')
+            .setTitle('Minesweeper')
             .setDescription(this.gameBoardToString())
             .setTimestamp();
 
         msg.channel.send(embed).then(emsg => {
             this.gameEmbed = emsg;
-            this.gameEmbed.react('⬅️');
-            this.gameEmbed.react('⬆️');
-            this.gameEmbed.react('⬇️');
-            this.gameEmbed.react('➡️');
-
             this.waitForReaction();
         });
     }
 
     step() {
-        if (apple.x == this.snake[0].x && apple.y == this.snake[0].y) {
-            this.score += 1;
-            this.snakeLength++;
-            this.newAppleLoc();
-        }
-
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#0099ff')
-            .setTitle('Snake Game')
+            .setTitle('Minesweeper')
             .setDescription(this.gameBoardToString())
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
@@ -105,12 +58,10 @@ class SnakeGame {
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#0099ff')
-            .setTitle('Snake Game')
-            .setDescription("GAME OVER!\nSCORE: " + this.score)
+            .setTitle('Minesweeper')
+            .setDescription("GAME OVER!")
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
-
-        this.gameEmbed.reactions.removeAll()
     }
 
     filter(reaction, user) {
@@ -168,4 +119,4 @@ class SnakeGame {
     }
 }
 
-module.exports = SnakeGame;
+module.exports = MinesweeperGame;
