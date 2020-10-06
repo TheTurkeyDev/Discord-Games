@@ -29,6 +29,13 @@ client.on('message', msg => {
         }
         else if (msg.content.toLowerCase() === '!test') {
             //minesweeper.newGame(msg);
+        } else if (msg.content.toLowerCase() === '!help') {
+            const embed = new Discord.MessageEmbed()
+                .setColor('#fc2eff')
+                .setTitle('Help - Commands')
+                .setDescription("!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4")
+                .setTimestamp();
+            msg.channel.send(embed);
         }
     }
 });

@@ -31,7 +31,7 @@ class HangmanGame {
 
 
         const embed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#db9a00')
             .setTitle('Hangman')
             .setDescription(this.getDescription())
             .addField('Letters Guessed', '\u200b')
@@ -65,7 +65,7 @@ class HangmanGame {
 
         if (this.inGame) {
             const editEmbed = new Discord.MessageEmbed()
-                .setColor('#0099ff')
+                .setColor('#db9a00')
                 .setTitle('Hangman')
                 .setDescription(this.getDescription())
                 .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(" "))
@@ -79,7 +79,7 @@ class HangmanGame {
     gameOver(win) {
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#db9a00')
             .setTitle('Hangman')
             .setDescription((win ? "Chat Wins!" : "Chat losses") + "\n\nThe Word was:\n" + this.word)
             .setTimestamp();

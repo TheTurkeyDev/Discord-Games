@@ -36,7 +36,7 @@ class Connect4 {
 
         this.inGame = true;
         const embed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#000b9e')
             .setTitle('Connect-4')
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getChipFromTurn())
@@ -55,7 +55,7 @@ class Connect4 {
     step() {
         this.redTurn = !this.redTurn;
         const editEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#000b9e')
             .setTitle('Connect-4')
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getChipFromTurn())
@@ -68,7 +68,7 @@ class Connect4 {
     gameOver(winner) {
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#000b9e')
             .setTitle('Connect-4')
             .setDescription("GAME OVER! " + this.getWinnerText(winner))
             .setTimestamp();

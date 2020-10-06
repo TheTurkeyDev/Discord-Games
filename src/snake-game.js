@@ -68,7 +68,7 @@ class SnakeGame {
         this.snake = [{ x: 5, y: 5 }];
         this.newAppleLoc();
         const embed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#03ad03')
             .setTitle('Snake Game')
             .setDescription(this.gameBoardToString())
             .setTimestamp();
@@ -92,7 +92,7 @@ class SnakeGame {
         }
 
         const editEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#03ad03')
             .setTitle('Snake Game')
             .setDescription(this.gameBoardToString())
             .setTimestamp();
@@ -104,7 +104,7 @@ class SnakeGame {
     gameOver() {
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor('#03ad03')
             .setTitle('Snake Game')
             .setDescription("GAME OVER!\nSCORE: " + this.score)
             .setTimestamp();
