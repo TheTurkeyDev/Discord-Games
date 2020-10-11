@@ -60,6 +60,7 @@ class MinesweeperGame {
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
             .setDescription(this.gameBoardToString())
+            .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', true)
             .setTimestamp();
 
         msg.channel.send(embed).then(emsg => {
@@ -152,6 +153,7 @@ class MinesweeperGame {
                 .setColor('#c7c7c7')
                 .setTitle('Minesweeper')
                 .setDescription(this.gameBoardToString())
+                .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', true)
                 .setTimestamp();
             this.gameEmbed.edit(editEmbed);
         }
@@ -165,8 +167,10 @@ class MinesweeperGame {
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
             .setDescription("GAME OVER!\nYOU " + (win ? "WON" : "LOST"))
+            .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', true)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
+        this.gameEmbed.reactions.removeAll()
     }
 
     filter(reaction, user) {
@@ -185,6 +189,7 @@ class MinesweeperGame {
                     this.flagging = true;
                 }
 
+                this.step();
                 reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
                     this.waitForReaction();
                 });
