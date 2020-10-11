@@ -4,6 +4,7 @@ const SnakeGame = require('./snake-game');
 const HangmanGame = require('./hangman-game');
 const MinesweeperGame = require('./minesweeper');
 const Connect4 = require('./connect4');
+const express = require('express')
 
 const client = new Discord.Client(["MANAGE_MESSAGES"]);
 
@@ -27,13 +28,13 @@ client.on('message', msg => {
         else if (msg.content.toLowerCase() === '!connect4') {
             connect4.newGame(msg);
         }
-        else if (msg.content.toLowerCase() === '!test') {
-            //minesweeper.newGame(msg);
+        else if (msg.content.toLowerCase() === '!minesweeper') {
+            minesweeper.newGame(msg);
         } else if (msg.content.toLowerCase() === '!help') {
             const embed = new Discord.MessageEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Help - Commands')
-                .setDescription("!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4")
+                .setDescription("!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper")
                 .setTimestamp();
             msg.channel.send(embed);
         }
@@ -41,3 +42,17 @@ client.on('message', msg => {
 });
 
 client.login(config.token);
+
+const app = express()
+const port = 3030
+
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+    if (req.query.col && req.query.row) {
+        minesweeper.makeMove(parseInt(req.query.col), parseInt(req.query.row));
+    }
+})
+
+app.listen(port, () => {
+    console.log(`Example app listening at http://localhost:${port}`);
+})
