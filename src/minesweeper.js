@@ -22,7 +22,7 @@ class MinesweeperGame {
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 if (gameBoard[y * WIDTH + x] === "⬜")
-                    str += "[" + gameBoard[y * WIDTH + x] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + ")";
+                    str += "[" + gameBoard[y * WIDTH + x] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + (x == 2 && y == 2 ? "2" : "") + ")";
                 else
                     str += gameBoard[y * WIDTH + x];
             }
