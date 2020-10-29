@@ -21,10 +21,11 @@ class MinesweeperGame {
         let str = ""
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
-                if (gameBoard[y * WIDTH + x] === "⬜")
-                    str += "[" + gameBoard[y * WIDTH + x] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + (x == 2 && y == 2 ? "2" : "") + ")";
+                const index = y * WIDTH + x;
+                if (gameBoard[index] === "⬜" || gameBoard[index] === "🚩")
+                    str += "[" + gameBoard[index] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + (x == 2 && y == 2 ? "2" : "") + ")";
                 else
-                    str += gameBoard[y * WIDTH + x];
+                    str += gameBoard[index];
             }
             str += "\n";
         }
@@ -60,7 +61,8 @@ class MinesweeperGame {
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
             .setDescription(this.gameBoardToString())
-            .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', true)
+            .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
+            .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
             .setTimestamp();
 
         msg.channel.send(embed).then(emsg => {
@@ -136,7 +138,7 @@ class MinesweeperGame {
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 const index = y * WIDTH + x;
-                if (gameBoard[index] === "⬜")
+                if (gameBoard[index] === "⬜" && !bombLocs[index])
                     win = false;
                 if (gameBoard[index] === "💣")
                     lose = true;
@@ -153,7 +155,8 @@ class MinesweeperGame {
                 .setColor('#c7c7c7')
                 .setTitle('Minesweeper')
                 .setDescription(this.gameBoardToString())
-                .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', true)
+                .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
+                .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
                 .setTimestamp();
             this.gameEmbed.edit(editEmbed);
         }
@@ -167,7 +170,6 @@ class MinesweeperGame {
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
             .setDescription("GAME OVER!\nYOU " + (win ? "WON" : "LOST"))
-            .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', true)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
         this.gameEmbed.reactions.removeAll()
@@ -210,6 +212,9 @@ class MinesweeperGame {
             }
 
             this.step();
+        }
+        else if (gameBoard[index] === "🚩" && this.flagging) {
+            gameBoard[index] = "⬜";
         }
     }
 }

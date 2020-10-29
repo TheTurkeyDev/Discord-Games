@@ -81,7 +81,7 @@ class HangmanGame {
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#db9a00')
             .setTitle('Hangman')
-            .setDescription((win ? "Chat Wins!" : "Chat losses") + "\n\nThe Word was:\n" + this.word)
+            .setDescription((win ? "Chat Wins!" : "Chat loses") + "\n\nThe Word was:\n" + this.word)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
 
