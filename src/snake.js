@@ -5,7 +5,7 @@ const HEIGHT = 10;
 const gameBoard = [];
 const apple = { x: 1, y: 1 };
 
-class SnakeGame {
+module.exports = class SnakeGame {
     constructor() {
         this.snake = [{ x: 5, y: 5 }];
         this.snakeLength = 1;
@@ -167,5 +167,3 @@ class SnakeGame {
             });
     }
 }
-
-module.exports = SnakeGame;

@@ -6,7 +6,7 @@ const gameBoard = [];
 
 const reactions = { "1️⃣": 1, "2️⃣": 2, "3️⃣": 3, "4️⃣": 4, "5️⃣": 5, "6️⃣": 6, "7️⃣": 7 }
 
-class Connect4 {
+module.exports = class Connect4Game {
     constructor() {
         this.gameEmbed = null;
         this.inGame = false;
@@ -101,7 +101,7 @@ class Connect4 {
                 reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
                     if (placedY == 0)
                         this.gameEmbed.reactions.cache.get(reaction.emoji.name).remove();
-                        
+
                     if (this.hasWon(placedX, placedY)) {
                         this.gameOver(this.getChipFromTurn());
                     }
@@ -186,5 +186,3 @@ class Connect4 {
             return "The game went unfinished :(";
     }
 }
-
-module.exports = Connect4;

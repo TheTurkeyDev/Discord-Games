@@ -7,7 +7,7 @@ const bombLocs = [];
 
 const charMap = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 
-class MinesweeperGame {
+module.exports = class MinesweeperGame {
     constructor() {
         this.gameEmbed = null;
         this.inGame = false;
@@ -218,5 +218,3 @@ class MinesweeperGame {
         }
     }
 }
-
-module.exports = MinesweeperGame;

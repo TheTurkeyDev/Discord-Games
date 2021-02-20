@@ -7,7 +7,7 @@ const reactions = {
 var gameBoard = [];
 var aiMoveStack = [];
 
-class Chess {
+module.exports = class ChessGame {
     constructor() {
         this.gameMessage = null;
         this.inGame = false;
@@ -21,7 +21,7 @@ class Chess {
     }
 
     gameBoardDisplay() {
-        return "https://api.theturkey.dev/discordchess/genboard?gb=" + gameBoard.join(",") + "&s1=" + this.selected1X + "," + this.selected1Y + "&s2=" + this.selected2X + "," + this.selected2Y + "\n"
+        return "https://api.theturkey.dev/discordgames/genchessboard?gb=" + gameBoard.join(",") + "&s1=" + this.selected1X + "," + this.selected1Y + "&s2=" + this.selected2X + "," + this.selected2Y + "\n"
             + "```\n"
             + "Welcome to Chess!\n"
             + "Ignore the above link! That is simply our hack to generate the game board below!\n"
@@ -478,8 +478,6 @@ class Chess {
         gameBoard[move.ty * 8 + move.tx] = move.replaced;
     }
 }
-
-module.exports = Chess;
 
 const pawnEvalWhite =
     [
