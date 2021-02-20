@@ -32,9 +32,12 @@ module.exports = class MinesweeperGame {
         return str;
     }
 
-    newGame(msg) {
+    newGame(msg, onGameEnd) {
         if (this.inGame)
             return;
+
+        this.gameStarter = msg.author.id;
+        this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
@@ -60,6 +63,7 @@ module.exports = class MinesweeperGame {
         const embed = new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
             .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
@@ -148,12 +152,13 @@ module.exports = class MinesweeperGame {
         }
 
         if (win || lose) {
-            this.gameOver(win);
+            this.gameOver({ result: 'winner', win: win });
         }
         else {
             const editEmbed = new Discord.MessageEmbed()
                 .setColor('#c7c7c7')
                 .setTitle('Minesweeper')
+                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
                 .setDescription(this.gameBoardToString())
                 .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
                 .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
@@ -162,21 +167,23 @@ module.exports = class MinesweeperGame {
         }
     }
 
-    gameOver(win) {
-        if (!this.inGame)
-            return;
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
-            .setDescription("GAME OVER!\nYOU " + (win ? "WON" : "LOST"))
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription("GAME OVER!\n" + (result.result === 'winner' && result.win ? "YOU WON" : "YOU LOST"))
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
         this.gameEmbed.reactions.removeAll()
     }
 
     filter(reaction, user) {
-        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id !== this.gameEmbed.author.id;
+        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id === this.gameStarter;
     }
 
     waitForReaction() {
@@ -197,7 +204,7 @@ module.exports = class MinesweeperGame {
                 });
             })
             .catch(collected => {
-                this.gameOver(false);
+                this.gameOver({ result: 'ended' });
             });
     }
 

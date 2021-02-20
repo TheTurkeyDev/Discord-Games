@@ -33,9 +33,12 @@ module.exports = class TicTacToeGame {
         return str;
     }
 
-    newGame(msg) {
+    newGame(msg, onGameEnd) {
         if (this.inGame)
             return;
+
+        this.gameStarter = msg.author.id;
+        this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < 3; y++) {
             for (let x = 0; x < 3; x++) {
@@ -78,12 +81,15 @@ module.exports = class TicTacToeGame {
         this.waitForReaction();
     }
 
-    gameOver(winner) {
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#ab0e0e')
             .setTitle('Tic-Tac-Toe')
-            .setDescription("GAME OVER! " + this.getWinnerText(winner))
+            .setDescription("GAME OVER! " + this.getWinnerText(result))
             .setImage("https://api.theturkey.dev/discordgames/gentictactoeboard?gb=" + this.getGameboardStr())
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setTimestamp();
@@ -92,7 +98,7 @@ module.exports = class TicTacToeGame {
     }
 
     filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id !== this.gameEmbed.author.id;
+        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter;
     }
 
     waitForReaction() {
@@ -115,7 +121,7 @@ module.exports = class TicTacToeGame {
                 if (!this.isGameOver()) {
                     //Make CPU Move
                     this.minimax(0, PLAYER_2);
-                    let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x;
+                    let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
                     Object.keys(reactions).forEach(k => {
                         if (reactions[k] == cpuIndex)
                             this.gameEmbed.reactions.cache.get(k).remove()
@@ -142,16 +148,18 @@ module.exports = class TicTacToeGame {
     }
 
     getTurn() {
-        return this.xTurn ? "X" : "O";
+        return this.xTurn ? 'X' : 'O';
     }
 
-    getWinnerText(winner) {
-        if (winner.result == "tie")
-            return "It was a tie!";
-        else if (winner.result == "timeout")
-            return "The game went unfinished :(";
+    getWinnerText(result) {
+        if (result.result === 'tie')
+            return 'It was a tie!';
+        else if (result.result === 'timeout')
+            return 'The game went unfinished :(';
+        else if (result.result === 'force_end')
+            return 'The game was ended';
         else
-            return winner.name + " has won!";
+            return result.name + ' has won!';
     }
 
     isGameOver() {

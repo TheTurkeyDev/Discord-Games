@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const e = require('express');
 
 const WIDTH = 15;
 const HEIGHT = 10;
@@ -58,9 +59,12 @@ module.exports = class SnakeGame {
         apple.y = newApplePos.y;
     }
 
-    newGame(msg) {
+    newGame(msg, onGameEnd) {
         if (this.inGame)
             return;
+
+        this.gameStarter = msg.author.id;
+        this.onGameEnd = onGameEnd;
 
         this.inGame = true;
         this.score = 0;
@@ -70,6 +74,7 @@ module.exports = class SnakeGame {
         const embed = new Discord.MessageEmbed()
             .setColor('#03ad03')
             .setTitle('Snake Game')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .setTimestamp();
 
@@ -94,6 +99,7 @@ module.exports = class SnakeGame {
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#03ad03')
             .setTitle('Snake Game')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
@@ -101,11 +107,15 @@ module.exports = class SnakeGame {
         this.waitForReaction();
     }
 
-    gameOver() {
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#03ad03')
             .setTitle('Snake Game')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription("GAME OVER!\nSCORE: " + this.score)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
@@ -114,7 +124,7 @@ module.exports = class SnakeGame {
     }
 
     filter(reaction, user) {
-        return ['⬅️', '⬆️', '⬇️', '➡️'].includes(reaction.emoji.name) && user.id !== this.gameEmbed.author.id;
+        return ['⬅️', '⬆️', '⬇️', '➡️'].includes(reaction.emoji.name) && user.id === this.gameStarter;
     }
 
     waitForReaction() {
@@ -151,7 +161,7 @@ module.exports = class SnakeGame {
 
                 reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
                     if (this.isLocInSnake(nextPos)) {
-                        this.gameOver();
+                        this.gameOver({ result: 'lose' });
                     }
                     else {
                         this.snake.unshift(nextPos);
@@ -163,7 +173,7 @@ module.exports = class SnakeGame {
                 });
             })
             .catch(collected => {
-                this.gameOver();
+                this.gameOver({ result: 'timeout' });
             });
     }
 }

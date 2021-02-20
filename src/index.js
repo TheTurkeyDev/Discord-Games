@@ -10,42 +10,59 @@ const express = require('express');
 
 const client = new Discord.Client(["MANAGE_MESSAGES"]);
 
-const snake = new SnakeGame(client);
-const hangman = new HangmanGame(client);
-const minesweeper = new MinesweeperGame(client);
-const connect4 = new Connect4Game(client);
-const chess = new ChessGame(client);
-const ticTacToe = new TicTacToeGame(client);
+const snake = new SnakeGame();
+const hangman = new HangmanGame();
+const minesweeper = new MinesweeperGame();
+const connect4 = new Connect4Game();
+const chess = new ChessGame();
+const ticTacToe = new TicTacToeGame();
+
+const commandGameMap = {
+    '!snake': snake,
+    '!hangman': hangman,
+    '!connect4': connect4,
+    '!minesweeper': minesweeper,
+    '!chess': chess,
+    '!tictactoe': ticTacToe
+};
+const playerGameMap = {};
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
 });
 
 client.on('message', msg => {
-    if (msg.channel.name && msg.channel.name.includes("bot_land")) {
-        if (msg.content.toLowerCase() === '!snake') {
-            snake.newGame(msg);
+    if (msg.channel.name && msg.channel.name.includes("hidden")) {
+        if (commandGameMap.hasOwnProperty(msg.content.toLowerCase())) {
+            const game = commandGameMap[msg.content.toLowerCase()];
+            if (!game.inGame) {
+                if (playerGameMap.hasOwnProperty(msg.author.id)) {
+                    msg.reply("You must either finish or end your current game (!end) before you can play another!");
+                }
+                else {
+                    game.newGame(msg, () => {
+                        delete playerGameMap[msg.author.id];
+                    });
+                    playerGameMap[msg.author.id] = game;
+                }
+            }
+            else {
+                msg.reply("Sorry, there can only be 1 instance of a game at a time!");
+            }
         }
-        else if (msg.content.toLowerCase() === '!hangman') {
-            hangman.newGame(msg);
-        }
-        else if (msg.content.toLowerCase() === '!connect4') {
-            connect4.newGame(msg);
-        }
-        else if (msg.content.toLowerCase() === '!minesweeper') {
-            minesweeper.newGame(msg);
-        }
-        else if (msg.content.toLowerCase() === '!chess') {
-            chess.newGame(msg);
-        }
-        else if (msg.content.toLowerCase() === '!tictactoe') {
-            ticTacToe.newGame(msg);
+        else if (msg.content.toLowerCase() === '!end' || msg.content.toLowerCase() === '!stop') {
+            const userId = msg.author.id;
+            if (playerGameMap.hasOwnProperty(userId)) {
+                const game = playerGameMap[userId];
+                game.gameOver({ result: 'force_end' });
+                delete playerGameMap[userId];
+            }
         }
         else if (msg.content.toLowerCase() === '!help') {
             const embed = new Discord.MessageEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Help - Commands')
-                .setDescription("!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess")
+                .setDescription("!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess\n!tictactoe - Play TicTacToe")
                 .setTimestamp();
             msg.channel.send(embed);
         }

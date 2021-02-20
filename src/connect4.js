@@ -24,9 +24,12 @@ module.exports = class Connect4Game {
         return str;
     }
 
-    newGame(msg) {
+    newGame(msg, onGameEnd) {
         if (this.inGame)
             return;
+
+        this.gameStarter = msg.author.id;
+        this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
@@ -38,6 +41,7 @@ module.exports = class Connect4Game {
         const embed = new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getChipFromTurn())
             .setTimestamp();
@@ -57,6 +61,7 @@ module.exports = class Connect4Game {
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getChipFromTurn())
             .setTimestamp();
@@ -65,19 +70,23 @@ module.exports = class Connect4Game {
         this.waitForReaction();
     }
 
-    gameOver(winner) {
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
-            .setDescription("GAME OVER! " + this.getWinnerText(winner))
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription("GAME OVER! " + this.getWinnerText(result))
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
         this.gameEmbed.reactions.removeAll();
     }
 
     filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id !== this.gameEmbed.author.id;
+        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter;
     }
 
     waitForReaction() {
@@ -103,10 +112,10 @@ module.exports = class Connect4Game {
                         this.gameEmbed.reactions.cache.get(reaction.emoji.name).remove();
 
                     if (this.hasWon(placedX, placedY)) {
-                        this.gameOver(this.getChipFromTurn());
+                        this.gameOver({ result: 'winner', name: this.getChipFromTurn() });
                     }
                     else if (this.isBoardFull()) {
-                        this.gameOver("tie");
+                        this.gameOver({ result: 'tie' });
                     }
                     else {
                         this.step();
@@ -114,7 +123,7 @@ module.exports = class Connect4Game {
                 });
             })
             .catch(collected => {
-                this.gameOver("timeout");
+                this.gameOver({ result: 'timeout' });
             });
     }
 
@@ -177,12 +186,16 @@ module.exports = class Connect4Game {
         return true;
     }
 
-    getWinnerText(winner) {
-        if (winner === "🔴" || winner === "🟡")
-            return winner + " Has Won!";
-        else if (winner == "tie")
-            return "It was a tie!";
-        else if (winner == "timeout")
-            return "The game went unfinished :(";
+    getWinnerText(result) {
+        if (result.result === 'tie')
+            return 'It was a tie!';
+        else if (result.result === 'timeout')
+            return 'The game went unfinished :(';
+        else if (result.result === 'force_end')
+            return 'The game was ended';
+        else if (result.result === 'error')
+            return 'ERROR: ' + result.error;
+        else
+            return result.name + ' has won!';
     }
 }

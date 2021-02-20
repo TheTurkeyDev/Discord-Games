@@ -1,3 +1,5 @@
+const Discord = require('discord.js');
+
 const reactions = {
     "1️⃣": 0, "2️⃣": 1, "3️⃣": 2, "4️⃣": 3, "5️⃣": 4, "6️⃣": 5, "7️⃣": 6, "8️⃣": 7,
     "🇦": 10, "🇧": 11, "🇨": 12, "🇩": 13, "🇪": 14, "🇫": 15, "🇬": 16, "🇭": 17,
@@ -9,7 +11,7 @@ var aiMoveStack = [];
 
 module.exports = class ChessGame {
     constructor() {
-        this.gameMessage = null;
+        this.gameEmbed = null;
         this.inGame = false;
         this.blackTurn = true;
         this.selected1X = -1;
@@ -17,32 +19,27 @@ module.exports = class ChessGame {
         this.selected2X = -1;
         this.selected2Y = -1;
         this.selecting = true;
-        this.message = "";
+        this.message = "\u200b";
     }
 
-    gameBoardDisplay() {
-        return "https://api.theturkey.dev/discordgames/genchessboard?gb=" + gameBoard.join(",") + "&s1=" + this.selected1X + "," + this.selected1Y + "&s2=" + this.selected2X + "," + this.selected2Y + "\n"
-            + "```\n"
-            + "Welcome to Chess!\n"
-            + "Ignore the above link! That is simply our hack to generate the game board below!\n"
-            + "To play simply use the reactions provided to first select your piece you want to move\n"
-            + "Next hit the check reaction\n"
-            + "Now select where you want that peice to be moved!\n"
-            + "To go back to the piece selection hit the back reaction!\n"
-            + "Hit the check reaction to confirm your movement!\n"
-            + "If the piece dose not move check below to possibly see why!\n"
-            + "You do play against an AI, however the AI is not particularly very smart!\n"
-            + "There is no castling and you must actually take the king to win!\n"
-            + "INFO:\n"
-            + "\tTurn: " + (this.blackTurn ? "CPU" : "Player") + "\n"
-            + "\tState: " + (this.selecting ? "Selecting Piece" : "Moving Piece") + "\n\n"
-            + (this.message !== "" ? this.message : "") + "\n"
-            + "```";
+    getGameDesc() {
+        return "**Welcome to Chess!**\n"
+            + "- To play simply use the reactions provided to first select your piece you want to move\n"
+            + "- Next hit the check reaction\n"
+            + "- Now select where you want that peice to be moved!\n"
+            + "- To go back to the piece selection hit the back reaction!\n"
+            + "- Hit the check reaction to confirm your movement!\n"
+            + "- If the piece dose not move check below to possibly see why!\n"
+            + "- You do play against an AI, however the AI is not particularly very smart!\n"
+            + "- There is no castling and you must actually take the king to win!\n";
     }
 
-    newGame(msg) {
+    newGame(msg, onGameEnd) {
         if (this.inGame)
             return;
+
+        this.gameStarter = msg.author.id;
+        this.onGameEnd = onGameEnd;
 
         gameBoard = [2, 3, 4, 6, 5, 4, 3, 2,
             1, 1, 1, 1, 1, 1, 1, 1,
@@ -60,12 +57,23 @@ module.exports = class ChessGame {
         this.selected2X = -1;
         this.selected2Y = -1;
         this.selecting = true;
-        this.message = "";
+        this.message = "\u200b";
 
-        msg.channel.send(this.gameBoardDisplay()).then(emsg => {
-            this.gameMessage = emsg;
+        const embed = new Discord.MessageEmbed()
+            .setColor('#08b9bf')
+            .setTitle('Chess')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription(this.getGameDesc())
+            .addField('Turn:', this.blackTurn ? "CPU" : "Player")
+            .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
+            .addField('Message:', this.message)
+            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
+            .setTimestamp();
+
+        msg.channel.send(embed).then(emsg => {
+            this.gameEmbed = emsg;
             Object.keys(reactions).forEach(reaction => {
-                this.gameMessage.react(reaction);
+                this.gameEmbed.react(reaction);
             });
 
             this.waitForReaction();
@@ -74,7 +82,17 @@ module.exports = class ChessGame {
 
     step() {
         if (this.inGame) {
-            this.gameMessage.edit(this.gameBoardDisplay());
+            const embed = new Discord.MessageEmbed()
+                .setColor('#08b9bf')
+                .setTitle('Chess')
+                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+                .setDescription(this.getGameDesc())
+                .addField('Turn:', this.blackTurn ? "CPU" : "Player")
+                .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
+                .addField('Message:', this.message)
+                .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
+                .setTimestamp();
+            this.gameEmbed.edit(embed);
             this.waitForReaction();
         }
     }
@@ -92,12 +110,11 @@ module.exports = class ChessGame {
 
         if (blackKing && whiteKing) {
             this.blackTurn = true;
-            this.gameMessage.edit(this.gameBoardDisplay());
             this.makeBestMove();
             this.blackTurn = false;
         }
         else {
-            this.gameOver("Player");
+            this.gameOver({ result: 'winner', name: 'Player' });
             return;
         }
 
@@ -112,27 +129,36 @@ module.exports = class ChessGame {
         });
 
         if (!blackKing || !whiteKing) {
-            this.gameOver("Computer");
+            this.gameOver({ result: 'winner', name: 'Computer' });
         }
     }
 
-    gameOver(winner) {
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
         this.inGame = false;
-        this.gameMessage.edit("GAME OVER! " + this.getWinnerText(winner));
-        this.gameMessage.reactions.removeAll();
+        const embed = new Discord.MessageEmbed()
+            .setColor('#08b9bf')
+            .setTitle('Chess')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription("GAME OVER! " + this.getWinnerText(result))
+            .setTimestamp();
+        this.gameEmbed.edit(embed);
+        this.gameEmbed.reactions.removeAll();
     }
 
     filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id !== this.gameMessage.author.id;
+        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter;
     }
 
     waitForReaction() {
-        this.gameMessage.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 300000, errors: ['time'] })
+        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 12000, errors: ['time'] })
             .then(collected => {
                 const reaction = collected.first();
                 const index = reactions[reaction.emoji.name];
                 let progress = false;
-                this.message = "";
+                this.message = "-";
 
                 if (index == 20) {
                     progress = true;
@@ -158,14 +184,14 @@ module.exports = class ChessGame {
                 const currX = this.selecting ? this.selected1X : this.selected2X;
                 const currY = this.selecting ? this.selected1Y : this.selected2Y;
 
-                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameMessage.author.id).first().id);
+                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id);
                 if (progress && currY != -1 && currX != -1) {
                     const index = (this.selected1Y * 8) + this.selected1X;
                     if (this.selecting) {
 
                         const piece = gameBoard[index];
                         if (piece >= 10) {
-                            this.message = "";
+                            this.message = "\u200b";
                             this.selecting = false;
                         }
                         else if (piece == 0) {
@@ -198,19 +224,23 @@ module.exports = class ChessGame {
             })
             .catch(collected => {
                 if (typeof collected === 'string')
-                    this.gameOver(collected);
+                    this.gameOver({ result: 'error', error: collected });
                 else
-                    this.gameOver("The game was not finished!");
+                    this.gameOver({ result: 'timeout' });
             });
     }
 
-    getWinnerText(winner) {
-        if (winner === "Player" || winner === "Computer")
-            return "The " + winner + " has won!";
-        else if (winner == "tie")
-            return "It was a tie!";
+    getWinnerText(result) {
+        if (result.result === 'tie')
+            return 'It was a tie!';
+        else if (result.result === 'timeout')
+            return 'The game went unfinished :(';
+        else if (result.result === 'force_end')
+            return 'The game was ended';
+        else if (result.result === 'error')
+            return 'ERROR: ' + result.error;
         else
-            return winner;
+            return result.name + ' has won!';
     }
 
     canPieceMoveTo(piece, fx, fy, tx, ty) {

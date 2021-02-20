@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const fetch = require("node-fetch");
 
 //unicode fun...
 const letterEmojisMap = {
@@ -18,19 +19,23 @@ module.exports = class HangmanGame {
         this.wrongs = 0;
     }
 
-    newGame(msg) {
+    newGame(msg, onGameEnd) {
         if (this.inGame)
             return;
 
+        this.gameStarter = msg.author.id;
+        this.onGameEnd = onGameEnd;
+
         fetch('https://api.theturkey.dev/randomword').then(resp => resp.text()).then(word => {
             this.inGame = true;
-            this.word = word;
+            this.word = word.toUpperCase();
             this.guesssed = [];
             this.wrongs = 0;
 
             const embed = new Discord.MessageEmbed()
                 .setColor('#db9a00')
                 .setTitle('Hangman')
+                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
                 .setDescription(this.getDescription())
                 .addField('Letters Guessed', '\u200b')
                 .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
@@ -53,11 +58,11 @@ module.exports = class HangmanGame {
                     this.wrongs++;
 
                     if (this.wrongs == 6) {
-                        this.gameOver(false);
+                        this.gameOver({ result: 'win', win: false });
                     }
                 }
                 else if (!this.word.split("").map(l => this.guesssed.includes(l) ? l : "_").includes("_")) {
-                    this.gameOver(true);
+                    this.gameOver({ result: 'win', win: true });
                 }
             }
         }
@@ -66,6 +71,7 @@ module.exports = class HangmanGame {
             const editEmbed = new Discord.MessageEmbed()
                 .setColor('#db9a00')
                 .setTitle('Hangman')
+                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
                 .setDescription(this.getDescription())
                 .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(" "))
                 .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
@@ -75,12 +81,16 @@ module.exports = class HangmanGame {
         }
     }
 
-    gameOver(win) {
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
         this.inGame = false;
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#db9a00')
             .setTitle('Hangman')
-            .setDescription((win ? "Chat Wins!" : "Chat loses") + "\n\nThe Word was:\n" + this.word)
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription((result.result === 'winner' ? (result.win ? "Chat Wins!" : "Chat loses") : 'The game was ended!') + "\n\nThe Word was:\n" + this.word)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
 
@@ -104,15 +114,17 @@ module.exports = class HangmanGame {
             + "```";
     }
 
+
     waitForReaction() {
         this.gameEmbed.awaitReactions(() => true, { max: 1, time: 300000, errors: ['time'] })
             .then(collected => {
                 const reaction = collected.first();
-                this.makeGuess(reaction.emoji.name);
+                if (reaction.users.cache.has(this.gameStarter))
+                    this.makeGuess(reaction.emoji.name);
                 reaction.remove();
             })
             .catch(collected => {
-                this.gameOver(false);
+                this.gameOver({ result: 'ended' });
             });
     }
 }
