@@ -32,7 +32,7 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-    if (msg.channel.name && msg.channel.name.includes("hidden")) {
+    if (msg.channel.name && msg.channel.name.includes("bot_land")) {
         if (commandGameMap.hasOwnProperty(msg.content.toLowerCase())) {
             const game = commandGameMap[msg.content.toLowerCase()];
             if (!game.inGame) {
