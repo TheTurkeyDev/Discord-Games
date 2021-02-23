@@ -26,21 +26,5 @@ We hope this helps you!
 > ```
 > Remove both the lines designated with `<------` beside them, and relaunch your bot.
 
-### How do I make the bot only listen to the user that started the game?
-> On line number [126-128](https://github.com/TheTurkeyDev/Discord-Games/blob/master/src/snake.js#L126) of the `snake.js` file, You'll see a filter function. Replace this:
-> ```js
-> && user.id !== this.gameEmbed.author.id
-> ```
-> to this:
-> ```js
-> && user.id === gameStarter
-> ```
-> 
-> And add `let gameStarter = '';` above `const WIDTH =...`
-> 
-> And inside the `newGame(msg)` function, add `gameStarter = msg.author.id;`
-> 
-> **Use this on any game code you borrow from Turkey's GamesBot, that relies on reactions**
-
 ### My bot was working, and now it isnt?
 > Turkey has recently updated his bot's code (*As of Feb 20th 2021*). See [here](https://github.com/TheTurkeyDev/Discord-Games/tree/master/src) to get the updated structure!
