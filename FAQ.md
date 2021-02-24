@@ -12,8 +12,7 @@ We hope this helps you!
     1.  [Table of Contents](#table-of-contents)
     2.  [Questions](#questions)
         1.  [My bot wont respond to me?](#my-bot-wont-respond-to-me)
-        2.  [How do I make the bot only listen to the user that started the game?](#how-do-i-make-the-bot-only-listen-to-the-user-that-started-the-game)
-        3.  [My bot was working, and now it isnt?](#my-bot-was-working-and-now-it-isnt)
+        2.  [My bot was working, and now it isnt?](#my-bot-was-working-and-now-it-isnt)
 
 ## Questions
 
