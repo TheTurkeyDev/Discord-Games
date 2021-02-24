@@ -24,4 +24,4 @@ A [FAQ](/FAQ.md) can be found here as well to answer some common questions!
 ## Chess
 [![Chess](https://img.youtube.com/vi/yMg9tVZBSPw/0.jpg)](https://www.youtube.com/watch?v=yMg9tVZBSPw "Chess")
 ## Tic-Tac-Toe
-Comming Soon!
+[![Tic-Tac-Toe](https://img.youtube.com/vi/tgY5rpPixlA/0.jpg)](https://www.youtube.com/watch?v=tgY5rpPixlA "Tic-Tac-Toe")
