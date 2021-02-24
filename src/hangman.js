@@ -114,13 +114,14 @@ module.exports = class HangmanGame {
             + "```";
     }
 
-
     waitForReaction() {
         this.gameEmbed.awaitReactions(() => true, { max: 1, time: 300000, errors: ['time'] })
             .then(collected => {
                 const reaction = collected.first();
                 if (reaction.users.cache.has(this.gameStarter))
                     this.makeGuess(reaction.emoji.name);
+                else
+                    this.waitForReaction();
                 reaction.remove();
             })
             .catch(collected => {
