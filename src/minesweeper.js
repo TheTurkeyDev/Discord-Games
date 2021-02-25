@@ -37,6 +37,7 @@ module.exports = class MinesweeperGame {
             return;
 
         this.gameStarter = msg.author.id;
+        this.gameStarterName = msg.author.username;
         this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
@@ -60,21 +61,86 @@ module.exports = class MinesweeperGame {
 
         this.flagging = false;
         this.inGame = true;
-        const embed = new Discord.MessageEmbed()
+        msg.channel.send(this.getEmbed()).then(emsg => {
+            this.gameEmbed = emsg;
+            this.gameEmbed.react('👆');
+            this.gameEmbed.react('🚩');
+            this.waitForReaction();
+        });
+    }
+
+    getEmbed() {
+        return new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
             .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
+            .setFooter(`Currently Playing: ${this.gameStarterName}`)
             .setTimestamp();
+    }
 
-        msg.channel.send(embed).then(emsg => {
-            this.gameEmbed = emsg;
-            this.gameEmbed.react('👆');
-            this.gameEmbed.react('🚩');
-            this.waitForReaction();
-        });
+    step() {
+        let lose = false;
+        let win = true;
+        for (let y = 0; y < HEIGHT; y++) {
+            for (let x = 0; x < WIDTH; x++) {
+                const index = y * WIDTH + x;
+                if (gameBoard[index] === "⬜" && !bombLocs[index])
+                    win = false;
+                if (gameBoard[index] === "💣")
+                    lose = true;
+                if (gameBoard[index] === "🚩" && !bombLocs[index])
+                    win = false;
+            }
+        }
+
+        if (win || lose)
+            this.gameOver({ result: 'winner', win: win });
+        else
+            this.gameEmbed.edit(this.getEmbed());
+    }
+
+    gameOver(result) {
+        if (result.result !== 'force_end')
+            this.onGameEnd();
+
+        this.inGame = false;
+        const editEmbed = new Discord.MessageEmbed()
+            .setColor('#c7c7c7')
+            .setTitle('Minesweeper')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription("GAME OVER!\n" + (result.result === 'winner' && result.win ? "YOU WON" : "YOU LOST"))
+            .setTimestamp();
+        this.gameEmbed.edit(editEmbed);
+        this.gameEmbed.reactions.removeAll()
+    }
+
+    filter(reaction, user) {
+        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id === this.gameStarter;
+    }
+
+    waitForReaction() {
+        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 120000, errors: ['time'] })
+            .then(collected => {
+                const reaction = collected.first();
+
+                if (reaction.emoji.name === '👆') {
+                    this.flagging = false;
+                }
+                else if (reaction.emoji.name === '🚩') {
+                    this.flagging = true;
+                }
+
+                this.step();
+                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
+                    this.waitForReaction();
+                });
+            })
+            .catch(collected => {
+                this.gameOver({ result: 'ended' });
+            });
     }
 
     uncover(col, row) {
@@ -134,78 +200,6 @@ module.exports = class MinesweeperGame {
                 gameBoard[index] = "8️⃣";
             }
         }
-    }
-
-    step() {
-        let lose = false;
-        let win = true;
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
-                const index = y * WIDTH + x;
-                if (gameBoard[index] === "⬜" && !bombLocs[index])
-                    win = false;
-                if (gameBoard[index] === "💣")
-                    lose = true;
-                if (gameBoard[index] === "🚩" && !bombLocs[index])
-                    win = false;
-            }
-        }
-
-        if (win || lose) {
-            this.gameOver({ result: 'winner', win: win });
-        }
-        else {
-            const editEmbed = new Discord.MessageEmbed()
-                .setColor('#c7c7c7')
-                .setTitle('Minesweeper')
-                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-                .setDescription(this.gameBoardToString())
-                .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
-                .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
-                .setTimestamp();
-            this.gameEmbed.edit(editEmbed);
-        }
-    }
-
-    gameOver(result) {
-        if (result.result !== 'force_end')
-            this.onGameEnd();
-
-        this.inGame = false;
-        const editEmbed = new Discord.MessageEmbed()
-            .setColor('#c7c7c7')
-            .setTitle('Minesweeper')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription("GAME OVER!\n" + (result.result === 'winner' && result.win ? "YOU WON" : "YOU LOST"))
-            .setTimestamp();
-        this.gameEmbed.edit(editEmbed);
-        this.gameEmbed.reactions.removeAll()
-    }
-
-    filter(reaction, user) {
-        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id === this.gameStarter;
-    }
-
-    waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 120000, errors: ['time'] })
-            .then(collected => {
-                const reaction = collected.first();
-
-                if (reaction.emoji.name === '👆') {
-                    this.flagging = false;
-                }
-                else if (reaction.emoji.name === '🚩') {
-                    this.flagging = true;
-                }
-
-                this.step();
-                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
-                    this.waitForReaction();
-                });
-            })
-            .catch(collected => {
-                this.gameOver({ result: 'ended' });
-            });
     }
 
     makeMove(col, row) {

@@ -71,14 +71,8 @@ module.exports = class SnakeGame {
         this.snakeLength = 1;
         this.snake = [{ x: 5, y: 5 }];
         this.newAppleLoc();
-        const embed = new Discord.MessageEmbed()
-            .setColor('#03ad03')
-            .setTitle('Snake Game')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(this.gameBoardToString())
-            .setTimestamp();
 
-        msg.channel.send(embed).then(emsg => {
+        msg.channel.send(this.getEmbed()).then(emsg => {
             this.gameEmbed = emsg;
             this.gameEmbed.react('⬅️');
             this.gameEmbed.react('⬆️');
@@ -89,20 +83,23 @@ module.exports = class SnakeGame {
         });
     }
 
+    getEmbed() {
+        return new Discord.MessageEmbed()
+            .setColor('#03ad03')
+            .setTitle('Snake Game')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription(this.gameBoardToString())
+            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setTimestamp();
+    }
+
     step() {
         if (apple.x == this.snake[0].x && apple.y == this.snake[0].y) {
             this.score += 1;
             this.snakeLength++;
             this.newAppleLoc();
         }
-
-        const editEmbed = new Discord.MessageEmbed()
-            .setColor('#03ad03')
-            .setTitle('Snake Game')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(this.gameBoardToString())
-            .setTimestamp();
-        this.gameEmbed.edit(editEmbed);
+        this.gameEmbed.edit(this.getEmbed());
 
         this.waitForReaction();
     }

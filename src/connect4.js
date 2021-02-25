@@ -29,6 +29,7 @@ module.exports = class Connect4Game {
             return;
 
         this.gameStarter = msg.author.id;
+        this.gameStarterName = msg.author.username;
         this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
@@ -38,15 +39,8 @@ module.exports = class Connect4Game {
         }
 
         this.inGame = true;
-        const embed = new Discord.MessageEmbed()
-            .setColor('#000b9e')
-            .setTitle('Connect-4')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(this.gameBoardToString())
-            .addField('Turn:', this.getChipFromTurn())
-            .setTimestamp();
 
-        msg.channel.send(embed).then(emsg => {
+        msg.channel.send(this.getEmbed()).then(emsg => {
             this.gameEmbed = emsg;
             Object.keys(reactions).forEach(reaction => {
                 this.gameEmbed.react(reaction);
@@ -56,16 +50,20 @@ module.exports = class Connect4Game {
         });
     }
 
-    step() {
-        this.redTurn = !this.redTurn;
-        const editEmbed = new Discord.MessageEmbed()
+    getEmbed() {
+        return new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getChipFromTurn())
+            .setFooter(`Currently Playing: ${this.gameStarterName}`)
             .setTimestamp();
-        this.gameEmbed.edit(editEmbed);
+    }
+
+    step() {
+        this.redTurn = !this.redTurn;
+        this.gameEmbed.edit(this.getEmbed());
 
         this.waitForReaction();
     }

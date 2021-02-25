@@ -24,6 +24,7 @@ module.exports = class HangmanGame {
             return;
 
         this.gameStarter = msg.author.id;
+        this.gameStarterName = msg.author.username;
         this.onGameEnd = onGameEnd;
 
         fetch('https://api.theturkey.dev/randomword').then(resp => resp.text()).then(word => {
@@ -32,20 +33,23 @@ module.exports = class HangmanGame {
             this.guesssed = [];
             this.wrongs = 0;
 
-            const embed = new Discord.MessageEmbed()
-                .setColor('#db9a00')
-                .setTitle('Hangman')
-                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-                .setDescription(this.getDescription())
-                .addField('Letters Guessed', '\u200b')
-                .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
-                .setTimestamp();
-
-            msg.channel.send(embed).then(emsg => {
+            msg.channel.send(this.getEmbed()).then(emsg => {
                 this.gameEmbed = emsg;
                 this.waitForReaction();
             });
         });
+    }
+
+    getEmbed() {
+        return new Discord.MessageEmbed()
+            .setColor('#db9a00')
+            .setTitle('Hangman')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription(this.getDescription())
+            .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(" "))
+            .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
+            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setTimestamp();
     }
 
     makeGuess(reaction) {
@@ -58,25 +62,17 @@ module.exports = class HangmanGame {
                     this.wrongs++;
 
                     if (this.wrongs == 6) {
-                        this.gameOver({ result: 'win', win: false });
+                        this.gameOver({ result: 'winner', win: false });
                     }
                 }
                 else if (!this.word.split("").map(l => this.guesssed.includes(l) ? l : "_").includes("_")) {
-                    this.gameOver({ result: 'win', win: true });
+                    this.gameOver({ result: 'winner', win: true });
                 }
             }
         }
 
         if (this.inGame) {
-            const editEmbed = new Discord.MessageEmbed()
-                .setColor('#db9a00')
-                .setTitle('Hangman')
-                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-                .setDescription(this.getDescription())
-                .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(" "))
-                .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
-                .setTimestamp();
-            this.gameEmbed.edit(editEmbed);
+            this.gameEmbed.edit(this.getEmbed());
             this.waitForReaction();
         }
     }

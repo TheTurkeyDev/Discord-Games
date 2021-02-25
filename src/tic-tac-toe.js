@@ -38,6 +38,7 @@ module.exports = class TicTacToeGame {
             return;
 
         this.gameStarter = msg.author.id;
+        this.gameStarterName = msg.author.username;
         this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < 3; y++) {
@@ -47,16 +48,8 @@ module.exports = class TicTacToeGame {
         }
 
         this.inGame = true;
-        const embed = new Discord.MessageEmbed()
-            .setColor('#ab0e0e')
-            .setTitle('Tic-Tac-Toe')
-            .setDescription(this.getGameDesc())
-            .addField('Turn:', this.getTurn())
-            .setImage("https://api.theturkey.dev/discordgames/gentictactoeboard?gb=" + this.getGameboardStr())
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setTimestamp();
 
-        msg.channel.send(embed).then(emsg => {
+        msg.channel.send(this.getEmbed()).then(emsg => {
             this.gameEmbed = emsg;
             Object.keys(reactions).forEach(reaction => {
                 this.gameEmbed.react(reaction);
@@ -66,17 +59,20 @@ module.exports = class TicTacToeGame {
         });
     }
 
-    step() {
-        const editEmbed = new Discord.MessageEmbed()
+    getEmbed() {
+        return new Discord.MessageEmbed()
             .setColor('#ab0e0e')
             .setTitle('Tic-Tac-Toe')
             .setDescription(this.getGameDesc())
             .addField('Turn:', this.getTurn())
             .setImage("https://api.theturkey.dev/discordgames/gentictactoeboard?gb=" + this.getGameboardStr())
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setFooter(`Currently Playing: ${this.gameStarterName}`)
             .setTimestamp();
+    }
 
-        this.gameEmbed.edit(editEmbed);
+    step() {
+        this.gameEmbed.edit(this.getEmbed());
 
         this.waitForReaction();
     }
@@ -123,8 +119,8 @@ module.exports = class TicTacToeGame {
                     this.minimax(0, PLAYER_2);
                     let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
                     Object.keys(reactions).forEach(k => {
-                        if (reactions[k] == cpuIndex)
-                            this.gameEmbed.reactions.cache.get(k).remove()
+                        if (reactions[k] == cpuIndex && this.gameEmbed.reactions.cache.has(k))
+                            this.gameEmbed.reactions.cache.get(k).remove();
                     });
                     this.placeMove(this.computersMove.x, this.computersMove.y, PLAYER_2);
                 }
@@ -136,14 +132,13 @@ module.exports = class TicTacToeGame {
                         this.gameOver({ result: "winner", name: "The Player" });
                     else
                         this.gameOver({ result: "tie" });
-
                 }
                 else {
                     this.step();
                 }
             })
-            .catch(collected => {
-                this.gameOver({ result: "timeout" });
+            .catch(error => {
+                this.gameOver({ result: 'error', error: error });
             });
     }
 
@@ -158,6 +153,8 @@ module.exports = class TicTacToeGame {
             return 'The game went unfinished :(';
         else if (result.result === 'force_end')
             return 'The game was ended';
+        else if (result.result === 'error')
+            return `Error: ${result.error}`;
         else
             return result.name + ' has won!';
     }

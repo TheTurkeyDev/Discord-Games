@@ -39,6 +39,7 @@ module.exports = class ChessGame {
             return;
 
         this.gameStarter = msg.author.id;
+        this.gameStarterName = msg.author.username;
         this.onGameEnd = onGameEnd;
 
         gameBoard = [2, 3, 4, 6, 5, 4, 3, 2,
@@ -59,18 +60,7 @@ module.exports = class ChessGame {
         this.selecting = true;
         this.message = "\u200b";
 
-        const embed = new Discord.MessageEmbed()
-            .setColor('#08b9bf')
-            .setTitle('Chess')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(this.getGameDesc())
-            .addField('Turn:', this.blackTurn ? "CPU" : "Player")
-            .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
-            .addField('Message:', this.message)
-            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
-            .setTimestamp();
-
-        msg.channel.send(embed).then(emsg => {
+        msg.channel.send(this.getEmbed()).then(emsg => {
             this.gameEmbed = emsg;
             Object.keys(reactions).forEach(reaction => {
                 this.gameEmbed.react(reaction);
@@ -80,19 +70,23 @@ module.exports = class ChessGame {
         });
     }
 
+    getEmbed() {
+        return new Discord.MessageEmbed()
+            .setColor('#08b9bf')
+            .setTitle('Chess')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription(this.getGameDesc())
+            .addField('Turn:', this.blackTurn ? "CPU" : "Player")
+            .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
+            .addField('Message:', this.message)
+            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
+            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setTimestamp();
+    }
+
     step() {
         if (this.inGame) {
-            const embed = new Discord.MessageEmbed()
-                .setColor('#08b9bf')
-                .setTitle('Chess')
-                .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-                .setDescription(this.getGameDesc())
-                .addField('Turn:', this.blackTurn ? "CPU" : "Player")
-                .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
-                .addField('Message:', this.message)
-                .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
-                .setTimestamp();
-            this.gameEmbed.edit(embed);
+            this.gameEmbed.edit(this.getEmbed());
             this.waitForReaction();
         }
     }
@@ -153,7 +147,7 @@ module.exports = class ChessGame {
     }
 
     waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 12000, errors: ['time'] })
+        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 120000, errors: ['time'] })
             .then(collected => {
                 const reaction = collected.first();
                 const index = reactions[reaction.emoji.name];
