@@ -32,33 +32,38 @@ client.on('ready', () => {
 });
 
 client.on('message', msg => {
-    if (msg.channel.name && msg.channel.name.includes("bot_land")) {
-        if (commandGameMap.hasOwnProperty(msg.content.toLowerCase())) {
-            const game = commandGameMap[msg.content.toLowerCase()];
+    const msgParts = msg.content.toLowerCase().split(' ');
+    if (msg.channel.name && msg.channel.name.includes("hidden")) {
+        if (commandGameMap.hasOwnProperty(msgParts[0])) {
+            const game = commandGameMap[msgParts[0]].initGame();
             if (!game.inGame) {
-                if (playerGameMap.hasOwnProperty(msg.author.id)) {
+                if (!playerGameMap.hasOwnProperty(msg.guild.id))
+                    playerGameMap[msg.guild.id] = {};
+
+                if (playerGameMap[msg.guild.id].hasOwnProperty(msg.author.id)) {
                     msg.reply("You must either finish or end your current game (!end) before you can play another!");
                 }
                 else {
                     game.newGame(msg, () => {
-                        delete playerGameMap[msg.author.id];
+                        delete playerGameMap[msg.guild.id][msg.author.id];
                     });
-                    playerGameMap[msg.author.id] = game;
+                    playerGameMap[msg.guild.id][msg.author.id] = game;
                 }
             }
             else {
                 msg.reply("Sorry, there can only be 1 instance of a game at a time!");
             }
         }
-        else if (msg.content.toLowerCase() === '!end' || msg.content.toLowerCase() === '!stop') {
+        else if (msgParts[0] === '!end' || msgParts[0] === '!stop') {
             const userId = msg.author.id;
-            if (playerGameMap.hasOwnProperty(userId)) {
-                const game = playerGameMap[userId];
+            const guildID = msg.guild.id;
+            if (playerGameMap.hasOwnProperty(guildID) && playerGameMap[guildID].hasOwnProperty(userId)) {
+                const game = playerGameMap[guildID][userId];
                 game.gameOver({ result: 'force_end' });
-                delete playerGameMap[userId];
+                delete playerGameMap[guildID][userId];
             }
         }
-        else if (msg.content.toLowerCase() === '!help') {
+        else if (msgParts[0] === '!help') {
             const embed = new Discord.MessageEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Help - Commands')

@@ -20,6 +20,10 @@ module.exports = class SnakeGame {
         }
     }
 
+    initGame() {
+        return new SnakeGame();
+    }
+
     gameBoardToString() {
         let str = ""
         for (let y = 0; y < HEIGHT; y++) {
@@ -31,8 +35,16 @@ module.exports = class SnakeGame {
 
                 let flag = true;
                 for (let s = 0; s < this.snake.length; s++) {
-                    if (x == this.snake[s].x && y == this.snake[s].y) {
-                        str += "🟩";
+                    if (x === this.snake[s].x && y === this.snake[s].y) {
+                        if (s === 0) {
+                            if (this.inGame)
+                                str += "🐍";
+                            else
+                                str += "☠️";
+                        }
+                        else {
+                            str += "🟩";
+                        }
                         flag = false;
                     }
                 }
@@ -63,7 +75,7 @@ module.exports = class SnakeGame {
         if (this.inGame)
             return;
 
-        this.gameStarter = msg.author.id;
+        this.gameStarter = msg.author;
         this.onGameEnd = onGameEnd;
 
         this.inGame = true;
@@ -89,7 +101,7 @@ module.exports = class SnakeGame {
             .setTitle('Snake Game')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
-            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
@@ -113,7 +125,7 @@ module.exports = class SnakeGame {
             .setColor('#03ad03')
             .setTitle('Snake Game')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription("GAME OVER!\nSCORE: " + this.score)
+            .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.gameBoardToString()}`)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
 
@@ -121,7 +133,7 @@ module.exports = class SnakeGame {
     }
 
     filter(reaction, user) {
-        return ['⬅️', '⬆️', '⬇️', '➡️'].includes(reaction.emoji.name) && user.id === this.gameStarter;
+        return ['⬅️', '⬆️', '⬇️', '➡️'].includes(reaction.emoji.name) && user.id === this.gameStarter.id;
     }
 
     waitForReaction() {

@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const fetch = require("node-fetch");
+const fetch = require('node-fetch');
 
 //unicode fun...
 const letterEmojisMap = {
@@ -23,8 +23,7 @@ module.exports = class HangmanGame {
         if (this.inGame)
             return;
 
-        this.gameStarter = msg.author.id;
-        this.gameStarterName = msg.author.username;
+        this.gameStarter = msg.author;
         this.onGameEnd = onGameEnd;
 
         fetch('https://api.theturkey.dev/randomword').then(resp => resp.text()).then(word => {
@@ -48,7 +47,7 @@ module.exports = class HangmanGame {
             .setDescription(this.getDescription())
             .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(" "))
             .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
-            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
@@ -82,11 +81,12 @@ module.exports = class HangmanGame {
             this.onGameEnd();
 
         this.inGame = false;
+        const endText = result.result === 'winner' ? (result.win ? "Chat Wins!" : "Chat loses") : 'The game was ended!';
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#db9a00')
             .setTitle('Hangman')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription((result.result === 'winner' ? (result.win ? "Chat Wins!" : "Chat loses") : 'The game was ended!') + "\n\nThe Word was:\n" + this.word)
+            .setDescription(`${endText}\n\nThe Word was:\n${this.word}\n\n${this.getDescription()}`)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
 
@@ -114,7 +114,7 @@ module.exports = class HangmanGame {
         this.gameEmbed.awaitReactions(() => true, { max: 1, time: 300000, errors: ['time'] })
             .then(collected => {
                 const reaction = collected.first();
-                if (reaction.users.cache.has(this.gameStarter))
+                if (reaction.users.cache.has(this.gameStarter.id))
                     this.makeGuess(reaction.emoji.name);
                 else
                     this.waitForReaction();

@@ -28,8 +28,7 @@ module.exports = class Connect4Game {
         if (this.inGame)
             return;
 
-        this.gameStarter = msg.author.id;
-        this.gameStarterName = msg.author.username;
+        this.gameStarter = msg.author;
         this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
@@ -57,7 +56,7 @@ module.exports = class Connect4Game {
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getChipFromTurn())
-            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
@@ -77,14 +76,14 @@ module.exports = class Connect4Game {
             .setColor('#000b9e')
             .setTitle('Connect-4')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription("GAME OVER! " + this.getWinnerText(result))
+            .setDescription(`**GAME OVER! ${this.getWinnerText(result)}**\n\n${this.gameBoardToString()}`)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
         this.gameEmbed.reactions.removeAll();
     }
 
     filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter;
+        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter.id;
     }
 
     waitForReaction() {

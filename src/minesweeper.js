@@ -17,15 +17,19 @@ module.exports = class MinesweeperGame {
         return Math.floor(Math.random() * Math.floor(max));
     }
 
-    gameBoardToString() {
+    gameBoardToString(links = true) {
         let str = ""
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 const index = y * WIDTH + x;
-                if (gameBoard[index] === "⬜" || gameBoard[index] === "🚩")
-                    str += "[" + gameBoard[index] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + (x == 2 && y == 2 ? "2" : "") + ")";
-                else
+                if (gameBoard[index] === "⬜" || gameBoard[index] === "🚩") {
+                    if (links)
+                        str += "[" + gameBoard[index] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + (x == 2 && y == 2 ? "2" : "") + ")";
+                    else
+                        str += gameBoard[index];
+                } else {
                     str += gameBoard[index];
+                }
             }
             str += "\n";
         }
@@ -37,7 +41,6 @@ module.exports = class MinesweeperGame {
             return;
 
         this.gameStarter = msg.author.id;
-        this.gameStarterName = msg.author.username;
         this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
@@ -77,7 +80,7 @@ module.exports = class MinesweeperGame {
             .setDescription(this.gameBoardToString())
             .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
             .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
-            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
@@ -106,19 +109,29 @@ module.exports = class MinesweeperGame {
         if (result.result !== 'force_end')
             this.onGameEnd();
 
+        if (!result.win) {
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    if (bombLocs[y * WIDTH + x])
+                        gameBoard[y * WIDTH + x] = "💣";
+                }
+            }
+        }
+
         this.inGame = false;
+        const endText = result.result === 'winner' && result.win ? "YOU WON" : "YOU LOST";
         const editEmbed = new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription("GAME OVER!\n" + (result.result === 'winner' && result.win ? "YOU WON" : "YOU LOST"))
+            .setDescription(`**GAME OVER!**\n${endText}\n\n${this.gameBoardToString(false)}`)
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
         this.gameEmbed.reactions.removeAll()
     }
 
     filter(reaction, user) {
-        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id === this.gameStarter;
+        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id === this.gameStarter.id;
     }
 
     waitForReaction() {

@@ -17,6 +17,7 @@ module.exports = class TicTacToeGame {
         this.xTurn = true;
         this.message = "";
         this.computersMove = { x: 0, y: 0 };
+        this.winningPoints = { p1: -1, p2: -1 };
     }
 
     getGameDesc() {
@@ -37,8 +38,7 @@ module.exports = class TicTacToeGame {
         if (this.inGame)
             return;
 
-        this.gameStarter = msg.author.id;
-        this.gameStarterName = msg.author.username;
+        this.gameStarter = msg.author;
         this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < 3; y++) {
@@ -48,6 +48,7 @@ module.exports = class TicTacToeGame {
         }
 
         this.inGame = true;
+        this.winningPoints = { p1: -1, p2: -1 };
 
         msg.channel.send(this.getEmbed()).then(emsg => {
             this.gameEmbed = emsg;
@@ -65,9 +66,9 @@ module.exports = class TicTacToeGame {
             .setTitle('Tic-Tac-Toe')
             .setDescription(this.getGameDesc())
             .addField('Turn:', this.getTurn())
-            .setImage("https://api.theturkey.dev/discordgames/gentictactoeboard?gb=" + this.getGameboardStr())
+            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
@@ -86,7 +87,7 @@ module.exports = class TicTacToeGame {
             .setColor('#ab0e0e')
             .setTitle('Tic-Tac-Toe')
             .setDescription("GAME OVER! " + this.getWinnerText(result))
-            .setImage("https://api.theturkey.dev/discordgames/gentictactoeboard?gb=" + this.getGameboardStr())
+            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.p1}&p2=${this.winningPoints.p2}`)
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setTimestamp();
         this.gameEmbed.edit(editEmbed);
@@ -94,7 +95,7 @@ module.exports = class TicTacToeGame {
     }
 
     filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter;
+        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter.id;
     }
 
     waitForReaction() {
@@ -126,9 +127,9 @@ module.exports = class TicTacToeGame {
                 }
 
                 if (this.isGameOver()) {
-                    if (this.hasCPUWon())
+                    if (this.hasWon(PLAYER_2))
                         this.gameOver({ result: "winner", name: "The Computer" });
-                    else if (this.hasPlayerWon())
+                    else if (this.hasWon(PLAYER_1))
                         this.gameOver({ result: "winner", name: "The Player" });
                     else
                         this.gameOver({ result: "tie" });
@@ -160,24 +161,36 @@ module.exports = class TicTacToeGame {
     }
 
     isGameOver() {
-        return (this.hasPlayerWon() || this.hasCPUWon() || this.getAvailableStates().length == 0);
-    }
-
-    hasCPUWon() {
-        if ((gameBoard[0][0] == gameBoard[1][1] && gameBoard[0][0] == gameBoard[2][2] && gameBoard[0][0] == PLAYER_2) || (gameBoard[0][2] == gameBoard[1][1] && gameBoard[0][2] == gameBoard[2][0] && gameBoard[0][2] == PLAYER_2))
+        if (this.hasWon(PLAYER_1) || this.hasWon(PLAYER_2))
             return true;
-        for (let i = 0; i < 3; ++i)
-            if ((gameBoard[i][0] == gameBoard[i][1] && gameBoard[i][0] == gameBoard[i][2] && gameBoard[i][0] == PLAYER_2) || (gameBoard[0][i] == gameBoard[1][i] && gameBoard[0][i] == gameBoard[2][i] && gameBoard[0][i] == PLAYER_2))
-                return true;
+
+        if (this.getAvailableStates().length == 0) {
+            this.winningPoints = { p1: -1, p2: -1 };
+            return true;
+        }
         return false;
     }
 
-    hasPlayerWon() {
-        if ((gameBoard[0][0] == gameBoard[1][1] && gameBoard[0][0] == gameBoard[2][2] && gameBoard[0][0] == PLAYER_1) || (gameBoard[0][2] == gameBoard[1][1] && gameBoard[0][2] == gameBoard[2][0] && gameBoard[0][2] == PLAYER_1))
+    hasWon(player) {
+        if (gameBoard[0][0] == gameBoard[1][1] && gameBoard[0][0] == gameBoard[2][2] && gameBoard[0][0] == player) {
+            this.winningPoints = { p1: 0, p2: 8 };
             return true;
-        for (let i = 0; i < 3; ++i)
-            if ((gameBoard[i][0] == gameBoard[i][1] && gameBoard[i][0] == gameBoard[i][2] && gameBoard[i][0] == PLAYER_1) || (gameBoard[0][i] == gameBoard[1][i] && gameBoard[0][i] == gameBoard[2][i] && gameBoard[0][i] == PLAYER_1))
+        }
+        if (gameBoard[0][2] == gameBoard[1][1] && gameBoard[0][2] == gameBoard[2][0] && gameBoard[0][2] == player) {
+            this.winningPoints = { p1: 6, p2: 2 };
+            return true;
+        }
+        for (let i = 0; i < 3; ++i) {
+            if (gameBoard[i][0] == gameBoard[i][1] && gameBoard[i][0] == gameBoard[i][2] && gameBoard[i][0] == player) {
+                this.winningPoints = { p1: i, p2: i + 6 };
                 return true;
+            }
+
+            if (gameBoard[0][i] == gameBoard[1][i] && gameBoard[0][i] == gameBoard[2][i] && gameBoard[0][i] == player) {
+                this.winningPoints = { p1: i * 3, p2: (i * 3) + 2 };
+                return true;
+            }
+        }
         return false;
     }
 
@@ -196,9 +209,9 @@ module.exports = class TicTacToeGame {
 
     minimax(depth, turn) {
         //Game status...
-        if (this.hasCPUWon())
+        if (this.hasWon(PLAYER_2))
             return +1;
-        if (this.hasPlayerWon())
+        if (this.hasWon(PLAYER_1))
             return -1;
 
         const pointsAvailable = this.getAvailableStates();

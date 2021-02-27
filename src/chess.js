@@ -38,8 +38,7 @@ module.exports = class ChessGame {
         if (this.inGame)
             return;
 
-        this.gameStarter = msg.author.id;
-        this.gameStarterName = msg.author.username;
+        this.gameStarter = msg.author;
         this.onGameEnd = onGameEnd;
 
         gameBoard = [2, 3, 4, 6, 5, 4, 3, 2,
@@ -80,7 +79,7 @@ module.exports = class ChessGame {
             .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
             .addField('Message:', this.message)
             .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
-            .setFooter(`Currently Playing: ${this.gameStarterName}`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
@@ -137,13 +136,14 @@ module.exports = class ChessGame {
             .setTitle('Chess')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription("GAME OVER! " + this.getWinnerText(result))
+            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
             .setTimestamp();
         this.gameEmbed.edit(embed);
         this.gameEmbed.reactions.removeAll();
     }
 
     filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter;
+        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter.id;
     }
 
     waitForReaction() {
