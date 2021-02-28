@@ -4,7 +4,6 @@ This repository contains all my code for my discord games that I have made over 
 Feel free to use this code in your own projects as you would like, however I ask that you:
     
 1. Don't claim my own code as yours. 
-    
     * You may use this code in your own projects, but don't try and claim that you were the one who wrote this code.
 2. Provide some sort of credit or attribution. 
     * I very much like the "Author" tag you can set on the embeds and I accept that on each of the games as enough credit.

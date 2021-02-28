@@ -17,11 +17,11 @@ We hope this helps you!
 ## Questions
 
 ### My bot wont respond to me?
-> On [Line 35](https://github.com/TheTurkeyDev/Discord-Games/blob/master/src/index.js#L35) of the `index.js` file, you will see this:
+> On [Line 44](https://github.com/TheTurkeyDev/Discord-Games/blob/master/src/index.ts#L44) of the `index.ts` file, you will see this:
 > ```js
-> if (msg.channel.name.includes("bot_land")) { // Remove Line 35. <------
+> if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) { // Remove Line 44. <------
 >   // Ignore everything inside the brackets.
-> } // Remove Line 69. <------
+> } // Remove Line 81. <------
 > ```
 > Remove both the lines designated with `<------` beside them, and relaunch your bot.
 
