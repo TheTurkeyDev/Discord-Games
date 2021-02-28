@@ -1,24 +1,24 @@
-const Discord = require('discord.js');
+import GameBase from './game-base';
+import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import GameResult, { ResultType } from './game-result';
 
 const WIDTH = 9;
 const HEIGHT = 8;
-const gameBoard = [];
-const bombLocs = [];
+const gameBoard: string[] = [];
+const bombLocs: boolean[] = [];
 
 const charMap = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 
-module.exports = class MinesweeperGame {
-    constructor() {
-        this.gameEmbed = null;
-        this.inGame = false;
+export default class MinesweeperGame extends GameBase {
+
+    private flagging = false;
+
+    public initGame(): GameBase {
+        return new MinesweeperGame();
     }
 
-    getRandomInt(max) {
-        return Math.floor(Math.random() * Math.floor(max));
-    }
-
-    gameBoardToString(links = true) {
-        let str = ""
+    private gameBoardToString(links = true): string {
+        let str = "";
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 const index = y * WIDTH + x;
@@ -36,12 +36,9 @@ module.exports = class MinesweeperGame {
         return str;
     }
 
-    newGame(msg, onGameEnd) {
+    public newGame(msg: Message, onGameEnd: () => void): void {
         if (this.inGame)
             return;
-
-        this.gameStarter = msg.author.id;
-        this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
@@ -63,16 +60,10 @@ module.exports = class MinesweeperGame {
         }
 
         this.flagging = false;
-        this.inGame = true;
-        msg.channel.send(this.getEmbed()).then(emsg => {
-            this.gameEmbed = emsg;
-            this.gameEmbed.react('👆');
-            this.gameEmbed.react('🚩');
-            this.waitForReaction();
-        });
+        super.newGame(msg, onGameEnd, ['👆', '🚩']);
     }
 
-    getEmbed() {
+    protected getEmbed(): MessageEmbed {
         return new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
@@ -84,7 +75,16 @@ module.exports = class MinesweeperGame {
             .setTimestamp();
     }
 
-    step() {
+    protected getGameOverEmbed(result: GameResult): MessageEmbed {
+        return new Discord.MessageEmbed()
+            .setColor('#c7c7c7')
+            .setTitle('Minesweeper')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription(`**GAME OVER!**\n${result.name}\n\n${this.gameBoardToString(false)}`)
+            .setTimestamp();
+    }
+
+    protected step(): void {
         let lose = false;
         let win = true;
         for (let y = 0; y < HEIGHT; y++) {
@@ -99,64 +99,41 @@ module.exports = class MinesweeperGame {
             }
         }
 
-        if (win || lose)
-            this.gameOver({ result: 'winner', win: win });
+        if (win) {
+            this.gameOver({ result: ResultType.WINNER, name: "YOU WON" });
+        }
+        else if (lose) {
+            this.showBombs();
+            this.gameOver({ result: ResultType.WINNER, name: "YOU LOST" });
+        }
         else
-            this.gameEmbed.edit(this.getEmbed());
+            super.step();
     }
 
-    gameOver(result) {
-        if (result.result !== 'force_end')
-            this.onGameEnd();
-
-        if (!result.win) {
-            for (let y = 0; y < HEIGHT; y++) {
-                for (let x = 0; x < WIDTH; x++) {
-                    if (bombLocs[y * WIDTH + x])
-                        gameBoard[y * WIDTH + x] = "💣";
-                }
-            }
+    protected onReaction(reaction: MessageReaction): void {
+        if (reaction.emoji.name === '👆') {
+            this.flagging = false;
+        }
+        else if (reaction.emoji.name === '🚩') {
+            this.flagging = true;
         }
 
-        this.inGame = false;
-        const endText = result.result === 'winner' && result.win ? "YOU WON" : "YOU LOST";
-        const editEmbed = new Discord.MessageEmbed()
-            .setColor('#c7c7c7')
-            .setTitle('Minesweeper')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(`**GAME OVER!**\n${endText}\n\n${this.gameBoardToString(false)}`)
-            .setTimestamp();
-        this.gameEmbed.edit(editEmbed);
-        this.gameEmbed.reactions.removeAll()
+
+        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).then(() => {
+            this.step();
+        });
     }
 
-    filter(reaction, user) {
-        return ['👆', '🚩'].includes(reaction.emoji.name) && user.id === this.gameStarter.id;
+    private showBombs(): void {
+        for (let y = 0; y < HEIGHT; y++) {
+            for (let x = 0; x < WIDTH; x++) {
+                if (bombLocs[y * WIDTH + x])
+                    gameBoard[y * WIDTH + x] = "💣";
+            }
+        }
     }
 
-    waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 120000, errors: ['time'] })
-            .then(collected => {
-                const reaction = collected.first();
-
-                if (reaction.emoji.name === '👆') {
-                    this.flagging = false;
-                }
-                else if (reaction.emoji.name === '🚩') {
-                    this.flagging = true;
-                }
-
-                this.step();
-                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
-                    this.waitForReaction();
-                });
-            })
-            .catch(collected => {
-                this.gameOver({ result: 'ended' });
-            });
-    }
-
-    uncover(col, row) {
+    private uncover(col: number, row: number) {
         const index = row * WIDTH + col;
         if (bombLocs[index]) {
             gameBoard[index] = "💣";
@@ -215,7 +192,7 @@ module.exports = class MinesweeperGame {
         }
     }
 
-    makeMove(col, row) {
+    public makeMove(col: number, row: number) {
         const index = row * WIDTH + col;
         if (gameBoard[index] === "⬜") {
             if (this.flagging) {
@@ -230,5 +207,9 @@ module.exports = class MinesweeperGame {
         else if (gameBoard[index] === "🚩" && this.flagging) {
             gameBoard[index] = "⬜";
         }
+    }
+
+    private getRandomInt(max: number): number {
+        return Math.floor(Math.random() * Math.floor(max));
     }
 }

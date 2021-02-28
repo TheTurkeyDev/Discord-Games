@@ -1,28 +1,43 @@
-const Discord = require('discord.js');
+import GameBase from './game-base';
+import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import GameResult, { ResultType } from './game-result';
+import Position from './position';
 
-const reactions = {
-    "1️⃣": 0, "2️⃣": 1, "3️⃣": 2, "4️⃣": 3, "5️⃣": 4, "6️⃣": 5, "7️⃣": 6, "8️⃣": 7,
-    "🇦": 10, "🇧": 11, "🇨": 12, "🇩": 13, "🇪": 14, "🇫": 15, "🇬": 16, "🇭": 17,
-    "✔️": 20, "🔙": 21
-}
+const reactions = new Map([
+    ["1️⃣", 0],
+    ["2️⃣", 1],
+    ["3️⃣", 2],
+    ["4️⃣", 3],
+    ["5️⃣", 4],
+    ["6️⃣", 5],
+    ["7️⃣", 6],
+    ["8️⃣", 7],
+    ["🇦", 10],
+    ["🇧", 11],
+    ["🇨", 12],
+    ["🇩", 13],
+    ["🇪", 14],
+    ["🇫", 15],
+    ["🇬", 16],
+    ["🇭", 17],
+    ["✔️", 20],
+    ["🔙", 21]
+]);
 
-var gameBoard = [];
-var aiMoveStack = [];
+export default class ChessGame extends GameBase {
 
-module.exports = class ChessGame {
-    constructor() {
-        this.gameEmbed = null;
-        this.inGame = false;
-        this.blackTurn = true;
-        this.selected1X = -1;
-        this.selected1Y = -1;
-        this.selected2X = -1;
-        this.selected2Y = -1;
-        this.selecting = true;
-        this.message = "\u200b";
+    private gameBoard: number[] = [];
+    private aiMoveStack: Move[] = [];
+    private blackTurn = true;
+    private selectedMove: Move = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
+    private selecting = true;
+    private message = "\u200b";
+
+    public initGame(): GameBase {
+        return new ChessGame();
     }
 
-    getGameDesc() {
+    private getGameDesc(): string {
         return "**Welcome to Chess!**\n"
             + "- To play simply use the reactions provided to first select your piece you want to move\n"
             + "- Next hit the check reaction\n"
@@ -34,14 +49,11 @@ module.exports = class ChessGame {
             + "- There is no castling and you must actually take the king to win!\n";
     }
 
-    newGame(msg, onGameEnd) {
-        if (this.inGame)
+    public newGame(msg: Message, onGameEnd: () => void): void {
+        if (super.isInGame())
             return;
 
-        this.gameStarter = msg.author;
-        this.onGameEnd = onGameEnd;
-
-        gameBoard = [2, 3, 4, 6, 5, 4, 3, 2,
+        this.gameBoard = [2, 3, 4, 6, 5, 4, 3, 2,
             1, 1, 1, 1, 1, 1, 1, 1,
             0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -50,26 +62,15 @@ module.exports = class ChessGame {
             11, 11, 11, 11, 11, 11, 11, 11,
             12, 13, 14, 15, 16, 14, 13, 12];
 
-        this.inGame = true;
         this.blackTurn = false;
-        this.selected1X = -1;
-        this.selected1Y = -1;
-        this.selected2X = -1;
-        this.selected2Y = -1;
+        this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
         this.selecting = true;
         this.message = "\u200b";
 
-        msg.channel.send(this.getEmbed()).then(emsg => {
-            this.gameEmbed = emsg;
-            Object.keys(reactions).forEach(reaction => {
-                this.gameEmbed.react(reaction);
-            });
-
-            this.waitForReaction();
-        });
+        super.newGame(msg, onGameEnd, Array.from(reactions.keys()));
     }
 
-    getEmbed() {
+    protected getEmbed(): MessageEmbed {
         return new Discord.MessageEmbed()
             .setColor('#08b9bf')
             .setTitle('Chess')
@@ -78,23 +79,26 @@ module.exports = class ChessGame {
             .addField('Turn:', this.blackTurn ? "CPU" : "Player")
             .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
             .addField('Message:', this.message)
-            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
+            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(",")}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
 
-    step() {
-        if (this.inGame) {
-            this.gameEmbed.edit(this.getEmbed());
-            this.waitForReaction();
-        }
+    protected getGameOverEmbed(result: GameResult): MessageEmbed {
+        return new Discord.MessageEmbed()
+            .setColor('#08b9bf')
+            .setTitle('Chess')
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setDescription("GAME OVER! " + this.getWinnerText(result))
+            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(",")}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
+            .setTimestamp();
     }
 
-    endTurn() {
+    private endTurn(): void {
         let blackKing = false;
         let whiteKing = false;
 
-        gameBoard.forEach(p => {
+        this.gameBoard.forEach(p => {
             if (p == 6)
                 blackKing = true;
             else if (p == 16)
@@ -107,14 +111,14 @@ module.exports = class ChessGame {
             this.blackTurn = false;
         }
         else {
-            this.gameOver({ result: 'winner', name: 'Player' });
+            this.gameOver({ result: ResultType.WINNER, name: 'Player' });
             return;
         }
 
         blackKing = false;
         whiteKing = false;
 
-        gameBoard.forEach(p => {
+        this.gameBoard.forEach(p => {
             if (p == 6)
                 blackKing = true;
             else if (p == 16)
@@ -122,147 +126,118 @@ module.exports = class ChessGame {
         });
 
         if (!blackKing || !whiteKing) {
-            this.gameOver({ result: 'winner', name: 'Computer' });
+            this.gameOver({ result: ResultType.WINNER, name: 'Computer' });
         }
     }
 
-    gameOver(result) {
-        if (result.result !== 'force_end')
-            this.onGameEnd();
+    protected onReaction(reaction: MessageReaction): void {
+        const index = reactions.get(reaction.emoji.name);
+        if (index === undefined)
+            return;
 
-        this.inGame = false;
-        const embed = new Discord.MessageEmbed()
-            .setColor('#08b9bf')
-            .setTitle('Chess')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription("GAME OVER! " + this.getWinnerText(result))
-            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${gameBoard.join(",")}&s1=${this.selected1X},${this.selected1Y}&s2=${this.selected2X},${this.selected2Y}`)
-            .setTimestamp();
-        this.gameEmbed.edit(embed);
-        this.gameEmbed.reactions.removeAll();
-    }
+        let progress = false;
+        this.message = "-";
 
-    filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter.id;
-    }
+        if (index == 20) {
+            progress = true;
+        }
+        else if (index == 21 && !this.selecting) {
+            this.selecting = true;
+            this.selectedMove.tx = -1;
+            this.selectedMove.ty = -1;
+        }
+        else if (index >= 10) {
+            if (this.selecting)
+                this.selectedMove.fx = index % 10;
+            else
+                this.selectedMove.fy = index % 10;
+        }
+        else {
+            if (this.selecting)
+                this.selectedMove.fy = index;
+            else
+                this.selectedMove.ty = index;
+        }
 
-    waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 120000, errors: ['time'] })
-            .then(collected => {
-                const reaction = collected.first();
-                const index = reactions[reaction.emoji.name];
-                let progress = false;
-                this.message = "-";
+        const currX = this.selecting ? this.selectedMove.fx : this.selectedMove.tx;
+        const currY = this.selecting ? this.selectedMove.fy : this.selectedMove.ty;
 
-                if (index == 20) {
-                    progress = true;
+        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id);
+        if (progress && currY != -1 && currX != -1) {
+            const index = (this.selectedMove.fy * 8) + this.selectedMove.fx;
+            if (this.selecting) {
+
+                const piece = this.gameBoard[index];
+                if (piece >= 10) {
+                    this.message = "\u200b";
+                    this.selecting = false;
                 }
-                else if (index == 21 && !this.selecting) {
-                    this.selecting = true;
-                    this.selected2X = -1;
-                    this.selected2Y = -1;
-                }
-                else if (index >= 10) {
-                    if (this.selecting)
-                        this.selected1X = index % 10;
-                    else
-                        this.selected2X = index % 10;
+                else if (piece == 0) {
+                    this.message = "There is no piece at that location!";
                 }
                 else {
-                    if (this.selecting)
-                        this.selected1Y = index;
-                    else
-                        this.selected2Y = index;
+                    this.message = "You cannot move that piece!";
                 }
+            }
+            else {
+                const piece = this.gameBoard[index];
+                const moveInfo = this.canPieceMoveTo(piece, this.selectedMove);
+                if (moveInfo.valid) {
+                    this.gameBoard[index] = 0;
+                    this.gameBoard[(this.selectedMove.ty * 8) + this.selectedMove.tx] = piece;
+                    this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
+                    this.selecting = true;
+                    this.endTurn();
 
-                const currX = this.selecting ? this.selected1X : this.selected2X;
-                const currY = this.selecting ? this.selected1Y : this.selected2Y;
-
-                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id);
-                if (progress && currY != -1 && currX != -1) {
-                    const index = (this.selected1Y * 8) + this.selected1X;
-                    if (this.selecting) {
-
-                        const piece = gameBoard[index];
-                        if (piece >= 10) {
-                            this.message = "\u200b";
-                            this.selecting = false;
-                        }
-                        else if (piece == 0) {
-                            this.message = "There is no piece at that location!";
-                        }
-                        else {
-                            this.message = "You cannot move that piece!";
-                        }
-                    }
-                    else {
-                        const piece = gameBoard[index];
-                        const moveInfo = this.canPieceMoveTo(piece, this.selected1X, this.selected1Y, this.selected2X, this.selected2Y);
-                        if (moveInfo.valid) {
-                            gameBoard[index] = 0;
-                            gameBoard[(this.selected2Y * 8) + this.selected2X] = piece;
-                            this.selected1X = -1;
-                            this.selected1Y = -1;
-                            this.selected2X = -1;
-                            this.selected2Y = -1;
-                            this.selecting = true;
-                            this.endTurn();
-
-                        }
-                        else {
-                            this.message = moveInfo.msg;
-                        }
-                    }
                 }
-                this.step();
-            })
-            .catch(collected => {
-                if (typeof collected === 'string')
-                    this.gameOver({ result: 'error', error: collected });
-                else
-                    this.gameOver({ result: 'timeout' });
-            });
+                else {
+                    this.message = moveInfo.msg;
+                }
+            }
+        }
+        this.step();
     }
 
-    getWinnerText(result) {
-        if (result.result === 'tie')
+    private getWinnerText(result: GameResult) {
+        if (result.result === ResultType.TIE)
             return 'It was a tie!';
-        else if (result.result === 'timeout')
+        else if (result.result === ResultType.TIMEOUT)
             return 'The game went unfinished :(';
-        else if (result.result === 'force_end')
+        else if (result.result === ResultType.FORCE_END)
             return 'The game was ended';
-        else if (result.result === 'error')
+        else if (result.result === ResultType.ERROR)
             return 'ERROR: ' + result.error;
         else
             return result.name + ' has won!';
     }
 
-    canPieceMoveTo(piece, fx, fy, tx, ty) {
+    private canPieceMoveTo(piece: number, selectedMove: Move): MoveCheck {
         const blackPiece = piece < 10;
 
         switch (piece % 10) {
             case 1:
-                return this.checkPawnMove(blackPiece, fx, fy, tx, ty);
+                return this.checkPawnMove(blackPiece, selectedMove);
             case 2:
-                return this.checkRookMove(blackPiece, fx, fy, tx, ty);
+                return this.checkRookMove(blackPiece, selectedMove);
             case 3:
-                return this.checkKnightMove(blackPiece, fx, fy, tx, ty);
+                return this.checkKnightMove(blackPiece, selectedMove);
             case 4:
-                return this.checkBishopMove(blackPiece, fx, fy, tx, ty);
+                return this.checkBishopMove(blackPiece, selectedMove);
             case 5:
-                const rookMove = this.checkRookMove(blackPiece, fx, fy, tx, ty);
+                const rookMove = this.checkRookMove(blackPiece, selectedMove);
                 if (rookMove.valid)
-                    return this.checkBishopMove(blackPiece, fx, fy, tx, ty);
+                    return this.checkBishopMove(blackPiece, selectedMove);
                 return rookMove;
             case 6:
-                return this.checkKingMove(blackPiece, fx, fy, tx, ty);
+                return this.checkKingMove(blackPiece, selectedMove);
         }
+        return { valid: false, msg: "Invalid Piece!" };
     }
 
-    checkPawnMove(blackPiece, fx, fy, tx, ty) {
-        const xDiff = fx - tx;
-        const yDiff = fy - ty;
-        const pieceAt = gameBoard[(ty * 8) + tx];
+    private checkPawnMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
+        const xDiff = selectedMove.fx - selectedMove.tx;
+        const yDiff = selectedMove.fy - selectedMove.ty;
+        const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         if (pieceAt != 0 && ((blackPiece && pieceAt < 10) || (!blackPiece && pieceAt > 10)))
             return { valid: false, msg: "You already have a piece there!" };
 
@@ -273,9 +248,9 @@ module.exports = class ChessGame {
         }
         else if (xDiff == 0) {
             if (yDiff > 0 && !blackPiece) {
-                const checkJump = this.checkJumps([{ x: fx, y: fy - 1 }]);
+                const checkJump = this.checkJumps([{ x: selectedMove.fx, y: selectedMove.fy - 1 }]);
                 if (checkJump.valid) {
-                    if ((yDiff == 2 && fy == 6) || (yDiff == 1 && !pieceAtDiff))
+                    if ((yDiff == 2 && selectedMove.fy == 6) || (yDiff == 1 && !pieceAtDiff))
                         return { valid: true, msg: "A Pawn cannot top that position!" };
                     return { valid: false, msg: "" };
                 }
@@ -284,9 +259,9 @@ module.exports = class ChessGame {
                 }
             }
             else if (yDiff < 0 && blackPiece) {
-                const checkJump = this.checkJumps([{ x: fx, y: fy + 1 }]);
+                const checkJump = this.checkJumps([{ x: selectedMove.fx, y: selectedMove.fy + 1 }]);
                 if (checkJump.valid) {
-                    if ((yDiff == -2 && fy == 1) || (yDiff == -1 && !pieceAtDiff))
+                    if ((yDiff == -2 && selectedMove.fy == 1) || (yDiff == -1 && !pieceAtDiff))
                         return { valid: true, msg: "A Pawn cannot top that position!" };
                     return { valid: false, msg: "" };
                 }
@@ -305,33 +280,33 @@ module.exports = class ChessGame {
         }
     }
 
-    checkRookMove(blackPiece, fx, fy, tx, ty) {
-        const xDiff = fx - tx;
-        const yDiff = fy - ty;
-        const pieceAt = gameBoard[(ty * 8) + tx];
+    private checkRookMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
+        const xDiff = selectedMove.fx - selectedMove.tx;
+        const yDiff = selectedMove.fy - selectedMove.ty;
+        const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
 
         if (xDiff != 0 && yDiff == 0 && pieceAtDiff) {
             const betweenPos = [];
             const inc = -(xDiff / Math.abs(xDiff));
-            for (let i = fx + inc; i != tx; i += inc)
-                betweenPos.push({ x: i, y: fy });
+            for (let i = selectedMove.fx + inc; i != selectedMove.tx; i += inc)
+                betweenPos.push({ x: i, y: selectedMove.fy });
             return this.checkJumps(betweenPos);
         }
         else if (yDiff != 0 && xDiff == 0 && pieceAtDiff) {
             const betweenPos = [];
             const inc = -(yDiff / Math.abs(yDiff));
-            for (let i = fy + inc; i != ty; i += inc)
-                betweenPos.push({ x: fx, y: i });
+            for (let i = selectedMove.fy + inc; i != selectedMove.ty; i += inc)
+                betweenPos.push({ x: selectedMove.fx, y: i });
             return this.checkJumps(betweenPos);
         }
         return { valid: false, msg: "A Rook cannot move like that" };
     }
 
-    checkKnightMove(blackPiece, fx, fy, tx, ty) {
-        const xDiff = fx - tx;
-        const yDiff = fy - ty;
-        const pieceAt = gameBoard[(ty * 8) + tx];
+    private checkKnightMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
+        const xDiff = selectedMove.fx - selectedMove.tx;
+        const yDiff = selectedMove.fy - selectedMove.ty;
+        const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
         if (Math.abs(xDiff) == 2 && Math.abs(yDiff) == 1 && pieceAtDiff)
             return { valid: true, msg: "" };
@@ -340,18 +315,18 @@ module.exports = class ChessGame {
         return { valid: false, msg: "A Knight cannot move like that" };
     }
 
-    checkBishopMove(blackPiece, fx, fy, tx, ty) {
-        const xDiff = fx - tx;
-        const yDiff = fy - ty;
-        const pieceAt = gameBoard[(ty * 8) + tx];
+    private checkBishopMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
+        const xDiff = selectedMove.fx - selectedMove.tx;
+        const yDiff = selectedMove.fy - selectedMove.ty;
+        const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
 
         if (Math.abs(xDiff) == Math.abs(yDiff) && pieceAtDiff) {
             const betweenPos = [];
             const incx = -(xDiff / Math.abs(xDiff));
             const incy = -(yDiff / Math.abs(yDiff));
-            let j = fy + incy;
-            for (let i = fx + incx; i != tx; i += incx) {
+            let j = selectedMove.fy + incy;
+            for (let i = selectedMove.fx + incx; i != selectedMove.tx; i += incx) {
                 betweenPos.push({ x: i, y: j });
                 j += incy;
             }
@@ -360,10 +335,10 @@ module.exports = class ChessGame {
         return { valid: false, msg: "A Bishop cannot move like that" };
     }
 
-    checkKingMove(blackPiece, fx, fy, tx, ty) {
-        const xDiff = fx - tx;
-        const yDiff = fy - ty;
-        const pieceAt = gameBoard[(ty * 8) + tx];
+    private checkKingMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
+        const xDiff = selectedMove.fx - selectedMove.tx;
+        const yDiff = selectedMove.fy - selectedMove.ty;
+        const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
 
         if (Math.abs(xDiff) <= 1 && Math.abs(yDiff) <= 1 && pieceAtDiff) {
@@ -372,9 +347,9 @@ module.exports = class ChessGame {
         return { valid: false, msg: "A King cannot move like that" };
     }
 
-    checkJumps(positions) {
+    private checkJumps(positions: Position[]): MoveCheck {
         for (let i = 0; i < positions.length; i++)
-            if (gameBoard[(positions[i].y * 8) + positions[i].x] != 0)
+            if (this.gameBoard[(positions[i].y * 8) + positions[i].x] != 0)
                 return { valid: false, msg: "Cannot jump over piece at " + positions[i].x + ", " + positions[i].y };
         return { valid: true, msg: "" };
     }
@@ -384,21 +359,21 @@ module.exports = class ChessGame {
      * This AI below is reworked from https://github.com/lhartikk/simple-chess-ai and is not my own original work
      */
 
-    makeBestMove() {
-        const depth = 4;
-        const bestMove = this.minimaxRoot(depth, true);
-        gameBoard[bestMove.ty * 8 + bestMove.tx] = gameBoard[bestMove.fy * 8 + bestMove.fx];
-        gameBoard[bestMove.fy * 8 + bestMove.fx] = 0;
+    private makeBestMove(): void {
+        const depth: number = 4;
+        const bestMove: Move = this.minimaxRoot(depth, true);
+        this.gameBoard[bestMove.ty * 8 + bestMove.tx] = this.gameBoard[bestMove.fy * 8 + bestMove.fx];
+        this.gameBoard[bestMove.fy * 8 + bestMove.fx] = 0;
     }
 
-    minimaxRoot(depth, isMaximisingPlayer) {
-        const newGameMoves = this.getValidMoves();
-        let bestMove = -9999;
-        let bestMoveFound;
+    private minimaxRoot(depth: number, isMaximisingPlayer: boolean): Move {
+        const newGameMoves: Move[] = this.getValidMoves();
+        let bestMove: number = -9999;
+        let bestMoveFound!: Move;
 
         newGameMoves.forEach(gameMove => {
             this.makeTempMove(gameMove);
-            const value = this.minimax(depth - 1, -10000, 10000, !isMaximisingPlayer);
+            const value: number = this.minimax(depth - 1, -10000, 10000, !isMaximisingPlayer);
             this.undoTempMove();
             if (value >= bestMove) {
                 bestMove = value;
@@ -408,13 +383,13 @@ module.exports = class ChessGame {
         return bestMoveFound;
     }
 
-    minimax(depth, alpha, beta, isMaximisingPlayer) {
+    private minimax(depth: number, alpha: number, beta: number, isMaximisingPlayer: boolean): number {
         if (depth === 0)
             return -this.evaluateBoard();
 
-        const newGameMoves = this.getValidMoves();
+        const newGameMoves: Move[] = this.getValidMoves();
 
-        let bestMove = isMaximisingPlayer ? -9999 : 9999;
+        let bestMove: number = isMaximisingPlayer ? -9999 : 9999;
         newGameMoves.forEach(gameMove => {
             this.makeTempMove(gameMove);
 
@@ -434,15 +409,15 @@ module.exports = class ChessGame {
         return bestMove;
     }
 
-    evaluateBoard() {
+    private evaluateBoard(): number {
         let totalEvaluation = 0;
         for (let x = 0; x < 8; x++)
             for (let y = 0; y < 8; y++)
-                totalEvaluation = totalEvaluation + this.getPieceValue(gameBoard[y * 8 + x], x, y);
+                totalEvaluation = totalEvaluation + this.getPieceValue(this.gameBoard[y * 8 + x], x, y);
         return totalEvaluation;
     }
 
-    getPieceValue(piece, x, y) {
+    private getPieceValue(piece: number, x: number, y: number): number {
         if (piece == 0)
             return 0;
 
@@ -450,7 +425,7 @@ module.exports = class ChessGame {
         return piece < 10 ? absoluteValue : -absoluteValue;
     }
 
-    getAbsoluteValue(piece, isWhite, x, y) {
+    private getAbsoluteValue(piece: number, isWhite: boolean, x: number, y: number): number {
         switch (piece % 10) {
             case 1:
                 return 10 + (isWhite ? pawnEvalWhite[y][x] : pawnEvalBlack[y][x]);
@@ -465,20 +440,21 @@ module.exports = class ChessGame {
             case 6:
                 return 900 + (isWhite ? kingEvalWhite[y][x] : kingEvalBlack[y][x]);
             default:
-                throw "Unknown piece type: " + piece.type;
+                throw "Unknown piece type: " + piece;
         }
     };
 
-    getValidMoves() {
-        const validMoves = [];
+    private getValidMoves(): Move[] {
+        const validMoves: Move[] = [];
         for (let x = 0; x < 8; x++) {
             for (let y = 0; y < 8; y++) {
-                const piece = gameBoard[y * 8 + x];
+                const piece = this.gameBoard[y * 8 + x];
                 if (piece != 0 && piece < 10) {
                     for (let tx = 0; tx < 8; tx++) {
                         for (let ty = 0; ty < 8; ty++) {
-                            if (this.canPieceMoveTo(piece, x, y, tx, ty).valid) {
-                                validMoves.push({ fx: x, fy: y, tx: tx, ty: ty });
+                            const move: Move = { fx: x, fy: y, tx: tx, ty: ty, replaced: -1 };
+                            if (this.canPieceMoveTo(piece, move).valid) {
+                                validMoves.push(move);
                             }
                         }
                     }
@@ -488,22 +464,24 @@ module.exports = class ChessGame {
         return validMoves;
     }
 
-    makeTempMove(move) {
-        move.replaced = gameBoard[move.ty * 8 + move.tx];
-        aiMoveStack.push(move);
-        const piece = gameBoard[move.fy * 8 + move.fx];
-        gameBoard[move.fy * 8 + move.fx] = 0;
-        gameBoard[move.ty * 8 + move.tx] = piece;
+    private makeTempMove(move: Move): void {
+        move.replaced = this.gameBoard[move.ty * 8 + move.tx];
+        this.aiMoveStack.push(move);
+        const piece = this.gameBoard[move.fy * 8 + move.fx];
+        this.gameBoard[move.fy * 8 + move.fx] = 0;
+        this.gameBoard[move.ty * 8 + move.tx] = piece;
     }
 
-    undoTempMove() {
-        const move = aiMoveStack.pop();
-        gameBoard[move.fy * 8 + move.fx] = gameBoard[move.ty * 8 + move.tx];
-        gameBoard[move.ty * 8 + move.tx] = move.replaced;
+    private undoTempMove(): void {
+        const move = this.aiMoveStack.pop();
+        if (move !== undefined) {
+            this.gameBoard[move.fy * 8 + move.fx] = this.gameBoard[move.ty * 8 + move.tx];
+            this.gameBoard[move.ty * 8 + move.tx] = move.replaced;
+        }
     }
 }
 
-const pawnEvalWhite =
+const pawnEvalWhite: number[][] =
     [
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
@@ -515,9 +493,9 @@ const pawnEvalWhite =
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     ];
 
-const pawnEvalBlack = pawnEvalWhite.slice().reverse();
+const pawnEvalBlack: number[][] = pawnEvalWhite.slice().reverse();
 
-const knightEval =
+const knightEval: number[][] =
     [
         [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0],
         [-4.0, -2.0, 0.0, 0.0, 0.0, 0.0, -2.0, -4.0],
@@ -529,7 +507,7 @@ const knightEval =
         [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0]
     ];
 
-const bishopEvalWhite = [
+const bishopEvalWhite: number[][] = [
     [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0],
     [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
     [-1.0, 0.0, 0.5, 1.0, 1.0, 0.5, 0.0, -1.0],
@@ -540,9 +518,9 @@ const bishopEvalWhite = [
     [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0]
 ];
 
-const bishopEvalBlack = bishopEvalWhite.slice().reverse();
+const bishopEvalBlack: number[][] = bishopEvalWhite.slice().reverse();
 
-const rookEvalWhite = [
+const rookEvalWhite: number[][] = [
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
     [0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5],
     [-0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.5],
@@ -553,9 +531,9 @@ const rookEvalWhite = [
     [0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0]
 ];
 
-const rookEvalBlack = rookEvalWhite.slice().reverse();
+const rookEvalBlack: number[][] = rookEvalWhite.slice().reverse();
 
-const evalQueen = [
+const evalQueen: number[][] = [
     [-2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0],
     [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
     [-1.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0, -1.0],
@@ -566,7 +544,7 @@ const evalQueen = [
     [-2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0]
 ];
 
-const kingEvalWhite = [
+const kingEvalWhite: number[][] = [
 
     [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
     [-3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
@@ -578,4 +556,17 @@ const kingEvalWhite = [
     [2.0, 3.0, 1.0, 0.0, 0.0, 1.0, 3.0, 2.0]
 ];
 
-const kingEvalBlack = kingEvalWhite.slice().reverse();
+const kingEvalBlack: number[][] = kingEvalWhite.slice().reverse();
+
+interface Move {
+    fx: number;
+    fy: number;
+    tx: number;
+    ty: number;
+    replaced: number;
+}
+
+interface MoveCheck {
+    valid: boolean;
+    msg: string;
+}

@@ -1,19 +1,30 @@
-const Discord = require('discord.js');
+import GameResult, { ResultType } from "./game-result";
+import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import GameBase from "./game-base";
 
 const WIDTH = 7;
 const HEIGHT = 7;
-const gameBoard = [];
+const gameBoard: string[] = [];
 
-const reactions = { "1️⃣": 1, "2️⃣": 2, "3️⃣": 3, "4️⃣": 4, "5️⃣": 5, "6️⃣": 6, "7️⃣": 7 }
+const reactions = new Map([
+    ["1️⃣", 1],
+    ["2️⃣", 2],
+    ["3️⃣", 3],
+    ["4️⃣", 4],
+    ["5️⃣", 5],
+    ["6️⃣", 6],
+    ["7️⃣", 7]
+])
 
-module.exports = class Connect4Game {
-    constructor() {
-        this.gameEmbed = null;
-        this.inGame = false;
-        this.redTurn = true;
+export default class Connect4Game extends GameBase {
+
+    private redTurn = true;
+
+    public initGame(): GameBase {
+        return new Connect4Game();
     }
 
-    gameBoardToString() {
+    private gameBoardToString(): string {
         let str = "| . 1 | . 2 | 3 | . 4 | . 5 | 6 | . 7 |\n"
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
@@ -24,32 +35,19 @@ module.exports = class Connect4Game {
         return str;
     }
 
-    newGame(msg, onGameEnd) {
-        if (this.inGame)
+    public newGame(msg: Message, onGameEnd: () => void): void {
+        if (super.isInGame())
             return;
-
-        this.gameStarter = msg.author;
-        this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 gameBoard[y * WIDTH + x] = "⚪";
             }
         }
-
-        this.inGame = true;
-
-        msg.channel.send(this.getEmbed()).then(emsg => {
-            this.gameEmbed = emsg;
-            Object.keys(reactions).forEach(reaction => {
-                this.gameEmbed.react(reaction);
-            });
-
-            this.waitForReaction();
-        });
+        super.newGame(msg, onGameEnd, Array.from(reactions.keys()));
     }
 
-    getEmbed() {
+    protected getEmbed(): MessageEmbed {
         return new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
@@ -60,75 +58,60 @@ module.exports = class Connect4Game {
             .setTimestamp();
     }
 
-    step() {
-        this.redTurn = !this.redTurn;
-        this.gameEmbed.edit(this.getEmbed());
-
-        this.waitForReaction();
-    }
-
-    gameOver(result) {
-        if (result.result !== 'force_end')
-            this.onGameEnd();
-
-        this.inGame = false;
-        const editEmbed = new Discord.MessageEmbed()
+    protected getGameOverEmbed(result: GameResult): MessageEmbed {
+        return new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(`**GAME OVER! ${this.getWinnerText(result)}**\n\n${this.gameBoardToString()}`)
             .setTimestamp();
-        this.gameEmbed.edit(editEmbed);
-        this.gameEmbed.reactions.removeAll();
     }
 
-    filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter.id;
+    protected step() {
+        this.redTurn = !this.redTurn;
+        super.step();
     }
 
-    waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 300000, errors: ['time'] })
-            .then(collected => {
-                const reaction = collected.first();
-                const column = reactions[reaction.emoji.name] - 1;
-                let placedX = -1;
-                let placedY = -1;
+    protected onReaction(reaction: MessageReaction): void {
+        let column = reactions.get(reaction.emoji.name);
+        if (column === undefined)
+            return;
 
-                for (let y = HEIGHT - 1; y >= 0; y--) {
-                    const chip = gameBoard[column + (y * WIDTH)];
-                    if (chip === "⚪") {
-                        gameBoard[column + (y * WIDTH)] = this.getChipFromTurn();
-                        placedX = column;
-                        placedY = y;
-                        break;
-                    }
-                }
+        column -= 1;
+        let placedX = -1;
+        let placedY = -1;
 
-                reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first().id).then(() => {
-                    if (placedY == 0)
-                        this.gameEmbed.reactions.cache.get(reaction.emoji.name).remove();
+        for (let y = HEIGHT - 1; y >= 0; y--) {
+            const chip = gameBoard[column + (y * WIDTH)];
+            if (chip === "⚪") {
+                gameBoard[column + (y * WIDTH)] = this.getChipFromTurn();
+                placedX = column;
+                placedY = y;
+                break;
+            }
+        }
 
-                    if (this.hasWon(placedX, placedY)) {
-                        this.gameOver({ result: 'winner', name: this.getChipFromTurn() });
-                    }
-                    else if (this.isBoardFull()) {
-                        this.gameOver({ result: 'tie' });
-                    }
-                    else {
-                        this.step();
-                    }
-                });
-            })
-            .catch(collected => {
-                this.gameOver({ result: 'timeout' });
-            });
+        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).then(() => {
+            if (placedY == 0)
+                this.gameEmbed.reactions.cache.get(reaction.emoji.name)?.remove();
+
+            if (this.hasWon(placedX, placedY)) {
+                this.gameOver({ result: ResultType.WINNER, name: this.getChipFromTurn() });
+            }
+            else if (this.isBoardFull()) {
+                this.gameOver({ result: ResultType.TIE });
+            }
+            else {
+                this.step();
+            }
+        });
     }
 
-    getChipFromTurn() {
+    private getChipFromTurn(): string {
         return this.redTurn ? "🔴" : "🟡";
     }
 
-    hasWon(placedX, placedY) {
+    private hasWon(placedX: number, placedY: number): boolean {
         const chip = this.getChipFromTurn();
 
         //Horizontal Check
@@ -175,7 +158,7 @@ module.exports = class Connect4Game {
         return false;
     }
 
-    isBoardFull() {
+    private isBoardFull(): boolean {
         for (let y = 0; y < HEIGHT; y++)
             for (let x = 0; x < WIDTH; x++)
                 if (gameBoard[y * WIDTH + x] === "⚪")
@@ -183,14 +166,14 @@ module.exports = class Connect4Game {
         return true;
     }
 
-    getWinnerText(result) {
-        if (result.result === 'tie')
+    private getWinnerText(result: GameResult): string {
+        if (result.result === ResultType.TIE)
             return 'It was a tie!';
-        else if (result.result === 'timeout')
+        else if (result.result === ResultType.TIMEOUT)
             return 'The game went unfinished :(';
-        else if (result.result === 'force_end')
+        else if (result.result === ResultType.FORCE_END)
             return 'The game was ended';
-        else if (result.result === 'error')
+        else if (result.result === ResultType.ERROR)
             return 'ERROR: ' + result.error;
         else
             return result.name + ' has won!';

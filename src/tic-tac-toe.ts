@@ -1,8 +1,21 @@
-const Discord = require('discord.js');
+import GameBase from './game-base';
+import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import GameResult, { ResultType } from './game-result';
+import Position from './position';
 
 const gameBoard = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
-const reactions = { "1️⃣": 1, "2️⃣": 2, "3️⃣": 3, "4️⃣": 4, "5️⃣": 5, "6️⃣": 6, "7️⃣": 7, "8️⃣": 8, "9️⃣": 9 }
+const reactions = new Map([
+    ["1️⃣", 1],
+    ["2️⃣", 2],
+    ["3️⃣", 3],
+    ["4️⃣", 4],
+    ["5️⃣", 5],
+    ["6️⃣", 6],
+    ["7️⃣", 7],
+    ["8️⃣", 8],
+    ["9️⃣", 9],
+]);
 
 const NO_MOVE = 0;
 const PLAYER_1 = 1;
@@ -10,21 +23,18 @@ const PLAYER_2 = 2;
 
 const cpu_mistake_chance = 5;
 
-module.exports = class TicTacToeGame {
-    constructor() {
-        this.gameEmbed = null;
-        this.inGame = false;
-        this.xTurn = true;
-        this.message = "";
-        this.computersMove = { x: 0, y: 0 };
-        this.winningPoints = { p1: -1, p2: -1 };
+export default class TicTacToeGame extends GameBase {
+
+    private xTurn = true;
+    private message = "";
+    private computersMove: Position = { x: 0, y: 0 };
+    private winningPoints: Position = { x: -1, y: -1 };
+
+    public initGame(): GameBase {
+        return new TicTacToeGame();
     }
 
-    getGameDesc() {
-        return this.message;
-    }
-
-    getGameboardStr() {
+    private getGameboardStr(): string {
         let str = ""
         for (let y = 0; y < 3; y++) {
             for (let x = 0; x < 3; x++) {
@@ -34,12 +44,9 @@ module.exports = class TicTacToeGame {
         return str;
     }
 
-    newGame(msg, onGameEnd) {
+    public newGame(msg: Message, onGameEnd: () => void): void {
         if (this.inGame)
             return;
-
-        this.gameStarter = msg.author;
-        this.onGameEnd = onGameEnd;
 
         for (let y = 0; y < 3; y++) {
             for (let x = 0; x < 3; x++) {
@@ -47,24 +54,16 @@ module.exports = class TicTacToeGame {
             }
         }
 
-        this.inGame = true;
-        this.winningPoints = { p1: -1, p2: -1 };
+        this.winningPoints = { x: -1, y: -1 };
 
-        msg.channel.send(this.getEmbed()).then(emsg => {
-            this.gameEmbed = emsg;
-            Object.keys(reactions).forEach(reaction => {
-                this.gameEmbed.react(reaction);
-            });
-
-            this.waitForReaction();
-        });
+        super.newGame(msg, onGameEnd, Array.from(reactions.keys()));
     }
 
-    getEmbed() {
+    protected getEmbed(): MessageEmbed {
         return new Discord.MessageEmbed()
             .setColor('#ab0e0e')
             .setTitle('Tic-Tac-Toe')
-            .setDescription(this.getGameDesc())
+            .setDescription(this.message)
             .addField('Turn:', this.getTurn())
             .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
@@ -72,130 +71,112 @@ module.exports = class TicTacToeGame {
             .setTimestamp();
     }
 
-    step() {
-        this.gameEmbed.edit(this.getEmbed());
+    protected getGameOverEmbed(result: GameResult): MessageEmbed {
 
-        this.waitForReaction();
-    }
-
-    gameOver(result) {
-        if (result.result !== 'force_end')
-            this.onGameEnd();
-
-        this.inGame = false;
-        const editEmbed = new Discord.MessageEmbed()
+        return new Discord.MessageEmbed()
             .setColor('#ab0e0e')
             .setTitle('Tic-Tac-Toe')
             .setDescription("GAME OVER! " + this.getWinnerText(result))
-            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.p1}&p2=${this.winningPoints.p2}`)
+            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setTimestamp();
-        this.gameEmbed.edit(editEmbed);
-        this.gameEmbed.reactions.removeAll();
     }
 
-    filter(reaction, user) {
-        return Object.keys(reactions).includes(reaction.emoji.name) && user.id === this.gameStarter.id;
-    }
+    protected onReaction(reaction: MessageReaction): void {
+        this.gameEmbed.reactions.cache.get(reaction.emoji.name)?.remove();
 
-    waitForReaction() {
-        this.gameEmbed.awaitReactions((reaction, user) => this.filter(reaction, user), { max: 1, time: 300000, errors: ['time'] })
-            .then(collected => {
-                const reaction = collected.first();
-                this.gameEmbed.reactions.cache.get(reaction.emoji.name).remove();
+        let index = reactions.get(reaction.emoji.name);
+        if (index === undefined)
+            return;
 
-                const index = reactions[reaction.emoji.name] - 1;
-                const x = index % 3;
-                const y = Math.floor(index / 3);
-                if (gameBoard[x][y] !== 0) {
-                    this.step();
-                    return;
-                }
+        index -= 1;
+        const x = index % 3;
+        const y = Math.floor(index / 3);
+        if (gameBoard[x][y] !== 0) {
+            this.step();
+            return;
+        }
 
-                this.placeMove(x, y, PLAYER_1);
+        this.placeMove(x, y, PLAYER_1);
 
 
-                if (!this.isGameOver()) {
-                    //Make CPU Move
-                    this.minimax(0, PLAYER_2);
-                    let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
-                    Object.keys(reactions).forEach(k => {
-                        if (reactions[k] == cpuIndex && this.gameEmbed.reactions.cache.has(k))
-                            this.gameEmbed.reactions.cache.get(k).remove();
-                    });
-                    this.placeMove(this.computersMove.x, this.computersMove.y, PLAYER_2);
-                }
-
-                if (this.isGameOver()) {
-                    if (this.hasWon(PLAYER_2))
-                        this.gameOver({ result: "winner", name: "The Computer" });
-                    else if (this.hasWon(PLAYER_1))
-                        this.gameOver({ result: "winner", name: "The Player" });
-                    else
-                        this.gameOver({ result: "tie" });
-                }
-                else {
-                    this.step();
-                }
-            })
-            .catch(error => {
-                this.gameOver({ result: 'error', error: error });
+        if (!this.isGameOver()) {
+            //Make CPU Move
+            this.minimax(0, PLAYER_2);
+            let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
+            Object.keys(reactions).forEach(k => {
+                if (reactions.get(k) == cpuIndex && this.gameEmbed.reactions.cache.has(k))
+                    this.gameEmbed.reactions.cache.get(k)?.remove();
             });
+            this.placeMove(this.computersMove.x, this.computersMove.y, PLAYER_2);
+        }
+
+        if (this.isGameOver()) {
+            if (this.hasWon(PLAYER_2))
+                this.gameOver({ result: ResultType.WINNER, name: "The Computer" });
+            else if (this.hasWon(PLAYER_1))
+                this.gameOver({ result: ResultType.WINNER, name: "The Player" });
+            else
+                this.gameOver({ result: ResultType.TIE });
+        }
+        else {
+            this.step();
+        }
     }
 
-    getTurn() {
+    private getTurn(): string {
         return this.xTurn ? 'X' : 'O';
     }
 
-    getWinnerText(result) {
-        if (result.result === 'tie')
+    private getWinnerText(result: GameResult): string {
+        if (result.result === ResultType.TIE)
             return 'It was a tie!';
-        else if (result.result === 'timeout')
+        else if (result.result === ResultType.TIMEOUT)
             return 'The game went unfinished :(';
-        else if (result.result === 'force_end')
+        else if (result.result === ResultType.FORCE_END)
             return 'The game was ended';
-        else if (result.result === 'error')
+        else if (result.result === ResultType.ERROR)
             return `Error: ${result.error}`;
         else
             return result.name + ' has won!';
     }
 
-    isGameOver() {
+    private isGameOver(): boolean {
         if (this.hasWon(PLAYER_1) || this.hasWon(PLAYER_2))
             return true;
 
         if (this.getAvailableStates().length == 0) {
-            this.winningPoints = { p1: -1, p2: -1 };
+            this.winningPoints = { x: -1, y: -1 };
             return true;
         }
         return false;
     }
 
-    hasWon(player) {
+    private hasWon(player: number): boolean {
         if (gameBoard[0][0] == gameBoard[1][1] && gameBoard[0][0] == gameBoard[2][2] && gameBoard[0][0] == player) {
-            this.winningPoints = { p1: 0, p2: 8 };
+            this.winningPoints = { x: 0, y: 8 };
             return true;
         }
         if (gameBoard[0][2] == gameBoard[1][1] && gameBoard[0][2] == gameBoard[2][0] && gameBoard[0][2] == player) {
-            this.winningPoints = { p1: 6, p2: 2 };
+            this.winningPoints = { x: 6, y: 2 };
             return true;
         }
         for (let i = 0; i < 3; ++i) {
             if (gameBoard[i][0] == gameBoard[i][1] && gameBoard[i][0] == gameBoard[i][2] && gameBoard[i][0] == player) {
-                this.winningPoints = { p1: i, p2: i + 6 };
+                this.winningPoints = { x: i, y: i + 6 };
                 return true;
             }
 
             if (gameBoard[0][i] == gameBoard[1][i] && gameBoard[0][i] == gameBoard[2][i] && gameBoard[0][i] == player) {
-                this.winningPoints = { p1: i * 3, p2: (i * 3) + 2 };
+                this.winningPoints = { x: i * 3, y: (i * 3) + 2 };
                 return true;
             }
         }
         return false;
     }
 
-    getAvailableStates() {
-        const availablePoints = [];
+    private getAvailableStates(): Position[] {
+        const availablePoints: Position[] = [];
         for (let i = 0; i < 3; ++i)
             for (let j = 0; j < 3; ++j)
                 if (gameBoard[i][j] == NO_MOVE)
@@ -203,11 +184,11 @@ module.exports = class TicTacToeGame {
         return availablePoints;
     }
 
-    placeMove(x, y, player) {
+    private placeMove(x: number, y: number, player: number): void {
         gameBoard[x][y] = player;
     }
 
-    minimax(depth, turn) {
+    private minimax(depth: number, turn: number): number {
         //Game status...
         if (this.hasWon(PLAYER_2))
             return +1;
