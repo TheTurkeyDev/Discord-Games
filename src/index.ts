@@ -41,7 +41,7 @@ client.on('message', msg => {
         return;
 
     const guildID = msg.guild!.id;
-    if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("hidden")) {
+    if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) {
         if (commandGameMap.has(command)) {
             const game = commandGameMap.get(command)!.initGame();
             if (!game.isInGame()) {
