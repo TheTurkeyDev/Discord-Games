@@ -1,5 +1,5 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
 
@@ -28,10 +28,14 @@ export default class ChessGame extends GameBase {
 
     private gameBoard: number[] = [];
     private aiMoveStack: Move[] = [];
-    private blackTurn = true;
+
     private selectedMove: Move = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
     private selecting = true;
     private message = "\u200b";
+
+    constructor() {
+        super('chess', true);
+    }
 
     public initGame(): GameBase {
         return new ChessGame();
@@ -49,7 +53,7 @@ export default class ChessGame extends GameBase {
             + "- There is no castling and you must actually take the king to win!\n";
     }
 
-    public newGame(msg: Message, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
         if (super.isInGame())
             return;
 
@@ -62,12 +66,12 @@ export default class ChessGame extends GameBase {
             11, 11, 11, 11, 11, 11, 11, 11,
             12, 13, 14, 15, 16, 14, 13, 12];
 
-        this.blackTurn = false;
+        this.player1Turn = true;
         this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
         this.selecting = true;
         this.message = "\u200b";
 
-        super.newGame(msg, onGameEnd, Array.from(reactions.keys()));
+        super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
     }
 
     protected getEmbed(): MessageEmbed {
@@ -76,7 +80,7 @@ export default class ChessGame extends GameBase {
             .setTitle('Chess')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.getGameDesc())
-            .addField('Turn:', this.blackTurn ? "CPU" : "Player")
+            .addField('Turn:', this.getDisplayForTurn())
             .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
             .addField('Message:', this.message)
             .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(",")}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
@@ -105,28 +109,15 @@ export default class ChessGame extends GameBase {
                 whiteKing = true;
         });
 
-        if (blackKing && whiteKing) {
-            this.blackTurn = true;
-            this.makeBestMove();
-            this.blackTurn = false;
-        }
-        else {
-            this.gameOver({ result: ResultType.WINNER, name: 'Player' });
-            return;
-        }
-
-        blackKing = false;
-        whiteKing = false;
-
-        this.gameBoard.forEach(p => {
-            if (p == 6)
-                blackKing = true;
-            else if (p == 16)
-                whiteKing = true;
-        });
-
         if (!blackKing || !whiteKing) {
-            this.gameOver({ result: ResultType.WINNER, name: 'Computer' });
+            this.gameOver({ result: ResultType.WINNER, name: this.getDisplayForTurn() });
+        }
+
+        this.player1Turn = !this.player1Turn;
+
+        if (!this.player1Turn && this.player2 == null && this.isInGame()) {
+            this.makeBestMove();
+            this.endTurn();
         }
     }
 
@@ -150,7 +141,7 @@ export default class ChessGame extends GameBase {
             if (this.selecting)
                 this.selectedMove.fx = index % 10;
             else
-                this.selectedMove.fy = index % 10;
+                this.selectedMove.tx = index % 10;
         }
         else {
             if (this.selecting)
@@ -166,11 +157,18 @@ export default class ChessGame extends GameBase {
         if (progress && currY != -1 && currX != -1) {
             const index = (this.selectedMove.fy * 8) + this.selectedMove.fx;
             if (this.selecting) {
-
                 const piece = this.gameBoard[index];
-                if (piece >= 10) {
+                if (piece >= 10 && this.player1Turn) {
                     this.message = "\u200b";
                     this.selecting = false;
+                    this.selectedMove.tx = this.selectedMove.fx;
+                    this.selectedMove.ty = this.selectedMove.fy;
+                }
+                else if (piece > 0 && piece < 10 && !this.player1Turn) {
+                    this.message = "\u200b";
+                    this.selecting = false;
+                    this.selectedMove.tx = this.selectedMove.fx;
+                    this.selectedMove.ty = this.selectedMove.fy;
                 }
                 else if (piece == 0) {
                     this.message = "There is no piece at that location!";
@@ -188,7 +186,6 @@ export default class ChessGame extends GameBase {
                     this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
                     this.selecting = true;
                     this.endTurn();
-
                 }
                 else {
                     this.message = moveInfo.msg;
@@ -478,6 +475,10 @@ export default class ChessGame extends GameBase {
             this.gameBoard[move.fy * 8 + move.fx] = this.gameBoard[move.ty * 8 + move.tx];
             this.gameBoard[move.ty * 8 + move.tx] = move.replaced;
         }
+    }
+
+    private getDisplayForTurn(): string {
+        return this.player1Turn ? this.gameStarter.username : (this.isMultiplayerGame ? this.player2!.username : "CPU");
     }
 }
 

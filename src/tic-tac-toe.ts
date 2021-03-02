@@ -1,5 +1,5 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
 
@@ -25,10 +25,13 @@ const cpu_mistake_chance = 5;
 
 export default class TicTacToeGame extends GameBase {
 
-    private xTurn = true;
     private message = "";
     private computersMove: Position = { x: 0, y: 0 };
     private winningPoints: Position = { x: -1, y: -1 };
+
+    constructor() {
+        super('tictactoe', true);
+    }
 
     public initGame(): GameBase {
         return new TicTacToeGame();
@@ -44,7 +47,7 @@ export default class TicTacToeGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
         if (this.inGame)
             return;
 
@@ -56,7 +59,7 @@ export default class TicTacToeGame extends GameBase {
 
         this.winningPoints = { x: -1, y: -1 };
 
-        super.newGame(msg, onGameEnd, Array.from(reactions.keys()));
+        super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
     }
 
     protected getEmbed(): MessageEmbed {
@@ -97,10 +100,10 @@ export default class TicTacToeGame extends GameBase {
             return;
         }
 
-        this.placeMove(x, y, PLAYER_1);
+        this.placeMove(x, y, this.player1Turn ? PLAYER_1 : PLAYER_2);
+        this.player1Turn = !this.player1Turn;
 
-
-        if (!this.isGameOver()) {
+        if (!this.isGameOver() && this.player2 == null && !this.player1Turn) {
             //Make CPU Move
             this.minimax(0, PLAYER_2);
             let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
@@ -109,13 +112,14 @@ export default class TicTacToeGame extends GameBase {
                     this.gameEmbed.reactions.cache.get(k)?.remove();
             });
             this.placeMove(this.computersMove.x, this.computersMove.y, PLAYER_2);
+            this.player1Turn = true;
         }
 
         if (this.isGameOver()) {
-            if (this.hasWon(PLAYER_2))
-                this.gameOver({ result: ResultType.WINNER, name: "The Computer" });
-            else if (this.hasWon(PLAYER_1))
-                this.gameOver({ result: ResultType.WINNER, name: "The Player" });
+            //Flip the turn back to the last player to place a piece
+            this.player1Turn = !this.player1Turn;
+            if (this.hasWon(PLAYER_2) || this.hasWon(PLAYER_1))
+                this.gameOver({ result: ResultType.WINNER, name: this.getTurn() });
             else
                 this.gameOver({ result: ResultType.TIE });
         }
@@ -125,7 +129,7 @@ export default class TicTacToeGame extends GameBase {
     }
 
     private getTurn(): string {
-        return this.xTurn ? 'X' : 'O';
+        return this.player1Turn ? this.gameStarter.username : (this.isMultiplayerGame ? this.player2!.username : 'CPU');
     }
 
     private getWinnerText(result: GameResult): string {

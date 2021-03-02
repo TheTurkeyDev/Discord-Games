@@ -1,5 +1,5 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 
 const WIDTH = 9;
@@ -12,6 +12,10 @@ const charMap = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 export default class MinesweeperGame extends GameBase {
 
     private flagging = false;
+
+    constructor() {
+        super('minesweeper', false);
+    }
 
     public initGame(): GameBase {
         return new MinesweeperGame();
@@ -36,7 +40,7 @@ export default class MinesweeperGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
         if (this.inGame)
             return;
 
@@ -60,7 +64,7 @@ export default class MinesweeperGame extends GameBase {
         }
 
         this.flagging = false;
-        super.newGame(msg, onGameEnd, ['👆', '🚩']);
+        super.newGame(msg, player2, onGameEnd, ['👆', '🚩']);
     }
 
     protected getEmbed(): MessageEmbed {

@@ -1,5 +1,5 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import fetch from 'node-fetch';
 
@@ -49,11 +49,15 @@ export default class HangmanGame extends GameBase {
     private guesssed: string[] = [];
     private wrongs: number = 0;
 
+    constructor() {
+        super('hangman', false);
+    }
+
     public initGame(): GameBase {
         return new HangmanGame();
     }
 
-    public newGame(msg: Message, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
         if (this.inGame)
             return;
 
@@ -62,7 +66,7 @@ export default class HangmanGame extends GameBase {
             this.guesssed = [];
             this.wrongs = 0;
 
-            super.newGame(msg, onGameEnd, Array.from(reactions.keys()), false);
+            super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()), false);
         });
     }
 

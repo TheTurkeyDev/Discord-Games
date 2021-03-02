@@ -40,34 +40,46 @@ client.on('message', msg => {
     if (msg.guild === undefined)
         return;
 
-    const guildID = msg.guild!.id;
-    if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) {
+    const guildId = msg.guild!.id;
+    const userId = msg.author.id;
+    if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("hidden")) {
         if (commandGameMap.has(command)) {
             const game = commandGameMap.get(command)!.initGame();
-            if (!game.isInGame()) {
-                if (!playerGameMap.has(guildID))
-                    playerGameMap.set(guildID, new Map<string, GameBase>());
 
-                if (playerGameMap.get(guildID)!.has(msg.author.id)) {
-                    msg.reply("You must either finish or end your current game (!end) before you can play another!");
+            let player2: User | null = null;
+            if (msg.mentions.members != null && msg.mentions.members?.size > 0) {
+                if (!game.doesSupportMultiplayer()) {
+                    msg.reply("Sorry that game is not a multiplayer game!");
+                    return;
                 }
-                else {
-                    game.newGame(msg, () => {
-                        playerGameMap.get(guildID)!.delete(msg.author.id);
-                    }, []);
-                    playerGameMap.get(guildID)!.set(msg.author.id, game);
-                }
+                else
+                    player2 = msg.mentions.members.first()!.user;
+            }
+
+            if (!playerGameMap.has(guildId))
+                playerGameMap.set(guildId, new Map<string, GameBase>());
+
+            const foundGame = Array.from(playerGameMap.get(guildId)!.values()).find(g => g.getGameId() === game.getGameId());
+            if (foundGame !== undefined && foundGame.isInGame()) {
+                msg.reply("Sorry, there can only be 1 instance of a game at a time!");
+                return;
+            }
+
+            if (playerGameMap.get(guildId)!.has(userId)) {
+                msg.reply("You must either finish or end your current game (!end) before you can play another!");
             }
             else {
-                msg.reply("Sorry, there can only be 1 instance of a game at a time!");
+                game.newGame(msg, player2, () => {
+                    playerGameMap.get(guildId)!.delete(userId);
+                }, []);
+                playerGameMap.get(guildId)!.set(userId, game);
             }
         }
         else if (command === '!end' || command === '!stop') {
-            const userId = msg.author.id;
-            if (playerGameMap.has(guildID) && playerGameMap.get(guildID)!.has(userId)) {
-                const game = playerGameMap.get(guildID)!.get(userId)!;
+            if (playerGameMap.has(guildId) && playerGameMap.get(guildId)!.has(userId)) {
+                const game = playerGameMap.get(guildId)!.get(userId)!;
                 game.gameOver({ result: ResultType.FORCE_END });
-                playerGameMap.get(guildID)?.delete(userId);
+                playerGameMap.get(guildId)?.delete(userId);
             }
         }
         else if (command === '!help') {

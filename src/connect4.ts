@@ -1,5 +1,5 @@
 import GameResult, { ResultType } from "./game-result";
-import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
 import GameBase from "./game-base";
 
 const WIDTH = 7;
@@ -18,14 +18,19 @@ const reactions = new Map([
 
 export default class Connect4Game extends GameBase {
 
-    private redTurn = true;
+    constructor() {
+        super('connect4', true);
+    }
 
     public initGame(): GameBase {
         return new Connect4Game();
     }
 
     private gameBoardToString(): string {
-        let str = "| . 1 | . 2 | 3 | . 4 | . 5 | 6 | . 7 |\n"
+        let str = '';
+        if (!this.player2 == null)
+            str += 'Note there is no AI for this game, so you are just playing against yourself';
+        str += "\n| . 1 | . 2 | 3 | . 4 | . 5 | 6 | . 7 |\n"
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 str += "|" + gameBoard[y * WIDTH + x];
@@ -35,7 +40,7 @@ export default class Connect4Game extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
         if (super.isInGame())
             return;
 
@@ -44,7 +49,7 @@ export default class Connect4Game extends GameBase {
                 gameBoard[y * WIDTH + x] = "⚪";
             }
         }
-        super.newGame(msg, onGameEnd, Array.from(reactions.keys()));
+        super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
     }
 
     protected getEmbed(): MessageEmbed {
@@ -68,7 +73,7 @@ export default class Connect4Game extends GameBase {
     }
 
     protected step() {
-        this.redTurn = !this.redTurn;
+        this.player1Turn = !this.player1Turn;
         super.step();
     }
 
@@ -108,7 +113,11 @@ export default class Connect4Game extends GameBase {
     }
 
     private getChipFromTurn(): string {
-        return this.redTurn ? "🔴" : "🟡";
+        if (this.isMultiplayerGame)
+            return this.player1Turn ? '🔴 ' + this.gameStarter.username : '🟡 ' + this.player2!.username;
+
+        else
+            return this.player1Turn ? '🔴' : '🟡';
     }
 
     private hasWon(placedX: number, placedY: number): boolean {

@@ -1,5 +1,5 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction } from 'discord.js';
+import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
 import Position from './position';
 import GameResult, { ResultType } from './game-result';
 
@@ -14,7 +14,7 @@ export default class SnakeGame extends GameBase {
     private score: number;
 
     constructor() {
-        super();
+        super('snake', false);
         this.snake.push({ x: 5, y: 5 });
         this.snakeLength = 1;
         this.score = 0;
@@ -76,14 +76,14 @@ export default class SnakeGame extends GameBase {
         apple.y = newApplePos.y;
     }
 
-    public newGame(msg: Message, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
         if (super.isInGame())
             return;
         this.score = 0;
         this.snakeLength = 1;
         this.snake = [{ x: 5, y: 5 }];
         this.newAppleLoc();
-        super.newGame(msg, onGameEnd, ['⬅️', '⬆️', '⬇️', '➡️']);
+        super.newGame(msg, player2, onGameEnd, ['⬅️', '⬆️', '⬇️', '➡️']);
     }
 
     protected getEmbed(): MessageEmbed {

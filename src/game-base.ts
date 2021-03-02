@@ -2,8 +2,12 @@ import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.j
 import GameResult, { ResultType } from './game-result';
 
 export default abstract class GameBase {
+    protected gameId: string;
+    protected isMultiplayerGame: boolean;
     protected inGame: boolean = false;
     protected gameStarter!: User;
+    protected player2: User | null = null;
+    protected player1Turn = true;
     protected onGameEnd: () => void = () => { };
 
     protected gameEmbed!: Message;
@@ -14,8 +18,14 @@ export default abstract class GameBase {
     protected abstract getGameOverEmbed(result: GameResult): MessageEmbed;
     protected abstract onReaction(reaction: MessageReaction): void;
 
-    public newGame(msg: Message, onGameEnd: () => void, reactions: string[], showReactions = true): void {
+    constructor(gameId: string, isMultiplayerGame: boolean) {
+        this.gameId = gameId;
+        this.isMultiplayerGame = isMultiplayerGame;
+    }
+
+    public newGame(msg: Message, player2: User | null, onGameEnd: () => void, reactions: string[], showReactions = true): void {
         this.gameStarter = msg.author;
+        this.player2 = player2;
         this.onGameEnd = onGameEnd;
         this.inGame = true;
         this.reactions = reactions;
@@ -34,7 +44,13 @@ export default abstract class GameBase {
     }
 
     private filter(reaction: MessageReaction, user: User): boolean {
-        return this.reactions.includes(reaction.emoji.name) && user.id === this.gameStarter.id;
+        if (this.reactions.includes(reaction.emoji.name)) {
+            if (this.player1Turn && user.id === this.gameStarter.id)
+                return true;
+            if (!this.player1Turn && this.player2 != null && user.id === this.player2.id)
+                return true;
+        }
+        return false;
     }
 
     private waitForReaction(): void {
@@ -61,7 +77,15 @@ export default abstract class GameBase {
         this.gameEmbed.reactions.removeAll();
     }
 
+    public getGameId(): string {
+        return this.gameId;
+    }
+
     public isInGame(): boolean {
         return this.inGame;
+    }
+
+    public doesSupportMultiplayer(): boolean {
+        return this.isMultiplayerGame;
     }
 }
