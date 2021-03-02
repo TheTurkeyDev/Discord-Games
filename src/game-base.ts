@@ -49,6 +49,8 @@ export default abstract class GameBase {
                 return true;
             if (!this.player1Turn && this.player2 != null && user.id === this.player2.id)
                 return true;
+            if (!this.player1Turn && this.player2 === null && user.id === this.gameStarter.id)
+                return true;
         }
         return false;
     }

@@ -119,26 +119,34 @@ export default class SnakeGame extends GameBase {
         const nextPos = { x: snakeHead.x, y: snakeHead.y };
         if (reaction.emoji.name === '⬅️') {
             let nextX = snakeHead.x - 1;
-            if (nextX < 0)
-                nextX = WIDTH - 1;
+            if (nextX < 0) {
+                this.gameOver({ result: ResultType.WINNER });
+                return;
+            }
             nextPos.x = nextX;
         }
         else if (reaction.emoji.name === '⬆️') {
             let nextY = snakeHead.y - 1;
-            if (nextY < 0)
-                nextY = HEIGHT - 1;
+            if (nextY < 0) {
+                this.gameOver({ result: ResultType.WINNER });
+                return;
+            }
             nextPos.y = nextY;
         }
         else if (reaction.emoji.name === '⬇️') {
             let nextY = snakeHead.y + 1;
-            if (nextY >= HEIGHT)
-                nextY = 0;
+            if (nextY >= HEIGHT) {
+                this.gameOver({ result: ResultType.WINNER });
+                return;
+            }
             nextPos.y = nextY;
         }
         else if (reaction.emoji.name === '➡️') {
             let nextX = snakeHead.x + 1;
-            if (nextX >= WIDTH)
-                nextX = 0;
+            if (nextX >= WIDTH) {
+                this.gameOver({ result: ResultType.WINNER });
+                return;
+            }
             nextPos.x = nextX;
         }
 

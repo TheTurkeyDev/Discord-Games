@@ -58,7 +58,7 @@ export default class Connect4Game extends GameBase {
             .setTitle('Connect-4')
             .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
             .setDescription(this.gameBoardToString())
-            .addField('Turn:', this.getChipFromTurn())
+            .addField('Turn:', this.getUserDisplay())
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
@@ -101,7 +101,7 @@ export default class Connect4Game extends GameBase {
                 this.gameEmbed.reactions.cache.get(reaction.emoji.name)?.remove();
 
             if (this.hasWon(placedX, placedY)) {
-                this.gameOver({ result: ResultType.WINNER, name: this.getChipFromTurn() });
+                this.gameOver({ result: ResultType.WINNER, name: this.getUserDisplay() });
             }
             else if (this.isBoardFull()) {
                 this.gameOver({ result: ResultType.TIE });
@@ -112,12 +112,14 @@ export default class Connect4Game extends GameBase {
         });
     }
 
-    private getChipFromTurn(): string {
-        if (this.isMultiplayerGame)
+    private getUserDisplay(): string {
+        if (this.isMultiplayerGame && this.player2 !== null)
             return this.player1Turn ? '🔴 ' + this.gameStarter.username : '🟡 ' + this.player2!.username;
+        return this.getChipFromTurn();
+    }
 
-        else
-            return this.player1Turn ? '🔴' : '🟡';
+    private getChipFromTurn(): string {
+        return this.player1Turn ? '🔴' : '🟡';
     }
 
     private hasWon(placedX: number, placedY: number): boolean {
