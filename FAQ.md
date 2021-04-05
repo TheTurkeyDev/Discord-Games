@@ -19,9 +19,8 @@ We hope this helps you!
 ### My bot wont respond to me?
 > On [Line 44](https://github.com/TheTurkeyDev/Discord-Games/blob/master/src/index.ts#L44) of the `index.ts` file, you will see this:
 > ```js
-> if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) { // Remove Line 44. <------
->   // Ignore everything inside the brackets.
-> } // Remove Line 81. <------
+> if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) { // Remove/Change the ' && msg.channel.name.includes("bot_land")' part from Line 44. <------
+>   // Continue as normal...
 > ```
 > Remove both the lines designated with `<------` beside them, and relaunch your bot.
 
