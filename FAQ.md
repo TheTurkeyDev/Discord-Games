@@ -22,7 +22,7 @@ We hope this helps you!
 > ```js
 > if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) {
 > ```
-> Remove/Change the ` && msg.channel.name.includes("bot_land")` part from Line 45., and relaunch your bot.
+> Remove/Change the ` && msg.channel.name.includes("bot_land")` part from Line 45, and relaunch your bot.
 
 ### My bot was working, and now it isnt?
 > Turkey has recently updated his bot's code (*As of Feb 20th 2021*). See [here](https://github.com/TheTurkeyDev/Discord-Games/tree/master/src) to get the updated structure!
