@@ -13,6 +13,7 @@ We hope this helps you!
     2.  [Questions](#questions)
         1.  [My bot wont respond to me?](#my-bot-wont-respond-to-me)
         2.  [My bot was working, and now it isnt?](#my-bot-was-working-and-now-it-isnt)
+        3.  [I've taken one of the files from this repo and used it for my bot, but it isn't working?](#ive-taken-one-of-the-files-from-this-repo-and-used-it-for-my-bot-but-it-isnt-working)
 
 ## Questions
 
@@ -25,3 +26,7 @@ We hope this helps you!
 
 ### My bot was working, and now it isnt?
 > Turkey has recently updated his bot's code (*As of Feb 20th 2021*). See [here](https://github.com/TheTurkeyDev/Discord-Games/tree/master/src) to get the updated structure!
+
+### Ive taken one of the files from this repo and used it for my bot, but it isnt working?
+> We prefer you to have a basic understanding of how JS/TS works. As you can see from the single file you've copied, it is pulling information from various other files. You will
+> **need** them files too! 
