@@ -1,7 +1,7 @@
 {
-  "name": "discord-snake-game",
+  "name": "discord-games-bot",
   "version": "1.0.0",
-  "description": "Snake, but in Discord",
+  "description": "Minigames for Discord",
   "main": "output/index.js",
   "scripts": {
     "build": "npx tsc",
