@@ -38,7 +38,7 @@ export default class TicTacToeGame extends GameBase {
     }
 
     private getGameboardStr(): string {
-        let str = ""
+        let str = '';
         for (let y = 0; y < 3; y++) {
             for (let x = 0; x < 3; x++) {
                 str += gameBoard[x][y];
@@ -47,7 +47,7 @@ export default class TicTacToeGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -69,7 +69,7 @@ export default class TicTacToeGame extends GameBase {
             .setDescription(this.message)
             .addField('Turn:', this.getTurn())
             .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=tgY5rpPixlA")
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
     }
@@ -81,7 +81,7 @@ export default class TicTacToeGame extends GameBase {
             .setTitle('Tic-Tac-Toe')
             .setDescription("GAME OVER! " + this.getWinnerText(result))
             .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=tgY5rpPixlA")
             .setTimestamp();
     }
 
@@ -119,9 +119,9 @@ export default class TicTacToeGame extends GameBase {
             //Flip the turn back to the last player to place a piece
             this.player1Turn = !this.player1Turn;
             if (this.hasWon(PLAYER_2) || this.hasWon(PLAYER_1))
-                this.gameOver({ result: ResultType.WINNER, name: this.getTurn() });
+                this.gameOver({ result: ResultType.WINNER, name: this.getTurn(), score: this.getGameboardStr() });
             else
-                this.gameOver({ result: ResultType.TIE });
+                this.gameOver({ result: ResultType.TIE, score: this.getGameboardStr() });
         }
         else {
             this.step();
@@ -129,20 +129,7 @@ export default class TicTacToeGame extends GameBase {
     }
 
     private getTurn(): string {
-        return this.player1Turn ? this.gameStarter.username : (this.isMultiplayerGame ? this.player2!.username : 'CPU');
-    }
-
-    private getWinnerText(result: GameResult): string {
-        if (result.result === ResultType.TIE)
-            return 'It was a tie!';
-        else if (result.result === ResultType.TIMEOUT)
-            return 'The game went unfinished :(';
-        else if (result.result === ResultType.FORCE_END)
-            return 'The game was ended';
-        else if (result.result === ResultType.ERROR)
-            return `Error: ${result.error}`;
-        else
-            return result.name + ' has won!';
+        return this.player1Turn ? this.gameStarter.username : (this.player2 ? this.player2!.username : 'CPU');
     }
 
     private isGameOver(): boolean {

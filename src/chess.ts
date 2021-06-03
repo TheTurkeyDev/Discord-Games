@@ -53,7 +53,7 @@ export default class ChessGame extends GameBase {
             + "- There is no castling and you must actually take the king to win!\n";
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
 
@@ -78,7 +78,7 @@ export default class ChessGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#08b9bf')
             .setTitle('Chess')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=yMg9tVZBSPw")
             .setDescription(this.getGameDesc())
             .addField('Turn:', this.getDisplayForTurn())
             .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
@@ -92,7 +92,7 @@ export default class ChessGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#08b9bf')
             .setTitle('Chess')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=yMg9tVZBSPw")
             .setDescription("GAME OVER! " + this.getWinnerText(result))
             .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(",")}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
             .setTimestamp();
@@ -110,7 +110,7 @@ export default class ChessGame extends GameBase {
         });
 
         if (!blackKing || !whiteKing) {
-            this.gameOver({ result: ResultType.WINNER, name: this.getDisplayForTurn() });
+            this.gameOver({ result: ResultType.WINNER, name: this.getDisplayForTurn(), score: this.gameBoard.join(",") });
         }
 
         this.player1Turn = !this.player1Turn;
@@ -153,7 +153,7 @@ export default class ChessGame extends GameBase {
         const currX = this.selecting ? this.selectedMove.fx : this.selectedMove.tx;
         const currY = this.selecting ? this.selectedMove.fy : this.selectedMove.ty;
 
-        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id);
+        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).catch(e => super.handleError(e, 'remove reactions'));
         if (progress && currY != -1 && currX != -1) {
             const index = (this.selectedMove.fy * 8) + this.selectedMove.fx;
             if (this.selecting) {
@@ -193,19 +193,6 @@ export default class ChessGame extends GameBase {
             }
         }
         this.step();
-    }
-
-    private getWinnerText(result: GameResult) {
-        if (result.result === ResultType.TIE)
-            return 'It was a tie!';
-        else if (result.result === ResultType.TIMEOUT)
-            return 'The game went unfinished :(';
-        else if (result.result === ResultType.FORCE_END)
-            return 'The game was ended';
-        else if (result.result === ResultType.ERROR)
-            return 'ERROR: ' + result.error;
-        else
-            return result.name + ' has won!';
     }
 
     private canPieceMoveTo(piece: number, selectedMove: Move): MoveCheck {

@@ -57,7 +57,7 @@ export default class HangmanGame extends GameBase {
         return new HangmanGame();
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -74,7 +74,7 @@ export default class HangmanGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#db9a00')
             .setTitle('Hangman')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=0G3gD4KJ59U")
             .setDescription(this.getDescription())
             .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(" "))
             .addField('How To Play', "React to this message using the emojis that look like letters (🅰️, 🇹, )")
@@ -83,12 +83,11 @@ export default class HangmanGame extends GameBase {
     }
 
     protected getGameOverEmbed(result: GameResult): MessageEmbed {
-        const endText = result.result === ResultType.WINNER ? result.name : 'The game was ended!';
         return new Discord.MessageEmbed()
             .setColor('#db9a00')
             .setTitle('Hangman')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(`${endText}\n\nThe Word was:\n${this.word}\n\n${this.getDescription()}`)
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=0G3gD4KJ59U")
+            .setDescription(`${this.getWinnerText(result)}\n\nThe Word was:\n${this.word}\n\n${this.getDescription()}`)
             .setTimestamp();
     }
 
@@ -105,12 +104,12 @@ export default class HangmanGame extends GameBase {
                     this.wrongs++;
 
                     if (this.wrongs == 6) {
-                        this.gameOver({ result: ResultType.WINNER, name: "Chat loses" });
+                        this.gameOver({ result: ResultType.LOSER, name: this.gameStarter.username, score: this.word });
                         return;
                     }
                 }
                 else if (!this.word.split("").map(l => this.guesssed.includes(l) ? l : "_").includes("_")) {
-                    this.gameOver({ result: ResultType.WINNER, name: "Chat Wins!" });
+                    this.gameOver({ result: ResultType.WINNER, name: this.gameStarter.username, score: this.word });
                     return;
                 }
             }
@@ -141,6 +140,6 @@ export default class HangmanGame extends GameBase {
             this.makeGuess(reaction.emoji.name);
         else
             this.step();
-        reaction.remove();
+        reaction.remove().catch(e => super.handleError(e, 'remove reaction'));
     }
 }

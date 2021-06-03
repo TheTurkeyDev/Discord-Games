@@ -40,7 +40,7 @@ export default class MinesweeperGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -71,7 +71,7 @@ export default class MinesweeperGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=j2ylF1AX1RY")
             .setDescription(this.gameBoardToString())
             .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
             .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
@@ -83,8 +83,8 @@ export default class MinesweeperGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#c7c7c7')
             .setTitle('Minesweeper')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
-            .setDescription(`**GAME OVER!**\n${result.name}\n\n${this.gameBoardToString(false)}`)
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=j2ylF1AX1RY")
+            .setDescription(`**GAME OVER!**\n${this.getWinnerText(result)}\n\n${this.gameBoardToString(false)}`)
             .setTimestamp();
     }
 
@@ -104,11 +104,11 @@ export default class MinesweeperGame extends GameBase {
         }
 
         if (win) {
-            this.gameOver({ result: ResultType.WINNER, name: "YOU WON" });
+            this.gameOver({ result: ResultType.WINNER, name: this.gameStarter.username, score: '' });
         }
         else if (lose) {
             this.showBombs();
-            this.gameOver({ result: ResultType.WINNER, name: "YOU LOST" });
+            this.gameOver({ result: ResultType.LOSER, name: this.gameStarter.username, score: '' });
         }
         else
             super.step();
@@ -125,7 +125,7 @@ export default class MinesweeperGame extends GameBase {
 
         reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).then(() => {
             this.step();
-        });
+        }).catch(e => super.handleError(e, 'remove reaction'));
     }
 
     private showBombs(): void {

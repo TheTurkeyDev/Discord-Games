@@ -2,12 +2,15 @@ export default interface GameResult {
     result: ResultType;
     error?: string;
     name?: string;
+    score?: string;
 }
 
 export enum ResultType {
-    TIMEOUT,
-    FORCE_END,
-    WINNER,
-    TIE,
-    ERROR,
+    TIMEOUT = "timeout",
+    FORCE_END = "force_end",
+    WINNER = "winner",
+    LOSER = "loser",
+    TIE = "tie",
+    ERROR = "error",
+    DELETED = "deleted",
 }

@@ -40,7 +40,7 @@ export default class Connect4Game extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
 
@@ -56,7 +56,7 @@ export default class Connect4Game extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=Sl1ZnvlNalI")
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.getUserDisplay())
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
@@ -67,7 +67,7 @@ export default class Connect4Game extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#000b9e')
             .setTitle('Connect-4')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=Sl1ZnvlNalI")
             .setDescription(`**GAME OVER! ${this.getWinnerText(result)}**\n\n${this.gameBoardToString()}`)
             .setTimestamp();
     }
@@ -101,15 +101,31 @@ export default class Connect4Game extends GameBase {
                 this.gameEmbed.reactions.cache.get(reaction.emoji.name)?.remove();
 
             if (this.hasWon(placedX, placedY)) {
-                this.gameOver({ result: ResultType.WINNER, name: this.getUserDisplay() });
+                this.gameOver({ result: ResultType.WINNER, name: this.getUserDisplay(), score: this.getScore() });
             }
             else if (this.isBoardFull()) {
-                this.gameOver({ result: ResultType.TIE });
+                this.gameOver({ result: ResultType.TIE, score: this.getScore() });
             }
             else {
                 this.step();
             }
-        });
+        }).catch(e => super.handleError(e, 'remove reactions'));
+    }
+
+    private getScore(): string {
+        let str = '';
+        for (let y = 0; y < HEIGHT; y++) {
+            for (let x = 0; x < WIDTH; x++) {
+                const chip = gameBoard[y * WIDTH + x];
+                if (chip === '⚪')
+                    str += '0';
+                else if (chip === '🔴')
+                    str += '1';
+                else if (chip === '🟡')
+                    str += '2';
+            }
+        }
+        return str;
     }
 
     private getUserDisplay(): string {
@@ -175,18 +191,5 @@ export default class Connect4Game extends GameBase {
                 if (gameBoard[y * WIDTH + x] === "⚪")
                     return false;
         return true;
-    }
-
-    private getWinnerText(result: GameResult): string {
-        if (result.result === ResultType.TIE)
-            return 'It was a tie!';
-        else if (result.result === ResultType.TIMEOUT)
-            return 'The game went unfinished :(';
-        else if (result.result === ResultType.FORCE_END)
-            return 'The game was ended';
-        else if (result.result === ResultType.ERROR)
-            return 'ERROR: ' + result.error;
-        else
-            return result.name + ' has won!';
     }
 }

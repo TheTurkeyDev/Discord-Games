@@ -76,7 +76,7 @@ export default class SnakeGame extends GameBase {
         apple.y = newApplePos.y;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: () => void): void {
+    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
         this.score = 0;
@@ -90,7 +90,7 @@ export default class SnakeGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#03ad03')
             .setTitle('Snake Game')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=tk5c0t72Up4")
             .setDescription(this.getGameboard())
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
@@ -100,7 +100,7 @@ export default class SnakeGame extends GameBase {
         return new Discord.MessageEmbed()
             .setColor('#03ad03')
             .setTitle('Snake Game')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://twitter.com/turkeydev")
+            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=tk5c0t72Up4")
             .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameboard()}`)
             .setTimestamp();
     }
@@ -120,7 +120,7 @@ export default class SnakeGame extends GameBase {
         if (reaction.emoji.name === '⬅️') {
             let nextX = snakeHead.x - 1;
             if (nextX < 0) {
-                this.gameOver({ result: ResultType.WINNER });
+                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
                 return;
             }
             nextPos.x = nextX;
@@ -128,7 +128,7 @@ export default class SnakeGame extends GameBase {
         else if (reaction.emoji.name === '⬆️') {
             let nextY = snakeHead.y - 1;
             if (nextY < 0) {
-                this.gameOver({ result: ResultType.WINNER });
+                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
                 return;
             }
             nextPos.y = nextY;
@@ -136,7 +136,7 @@ export default class SnakeGame extends GameBase {
         else if (reaction.emoji.name === '⬇️') {
             let nextY = snakeHead.y + 1;
             if (nextY >= HEIGHT) {
-                this.gameOver({ result: ResultType.WINNER });
+                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
                 return;
             }
             nextPos.y = nextY;
@@ -144,7 +144,7 @@ export default class SnakeGame extends GameBase {
         else if (reaction.emoji.name === '➡️') {
             let nextX = snakeHead.x + 1;
             if (nextX >= WIDTH) {
-                this.gameOver({ result: ResultType.WINNER });
+                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
                 return;
             }
             nextPos.x = nextX;
@@ -152,7 +152,7 @@ export default class SnakeGame extends GameBase {
 
         reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).then(() => {
             if (this.isLocInSnake(nextPos)) {
-                this.gameOver({ result: ResultType.WINNER });
+                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
             }
             else {
                 this.snake.unshift(nextPos);
@@ -160,6 +160,6 @@ export default class SnakeGame extends GameBase {
                     this.snake.pop();
                 this.step();
             }
-        });
+        }).catch(e => super.handleError(e, 'remove reaction'));
     }
 }

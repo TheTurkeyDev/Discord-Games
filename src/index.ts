@@ -1,4 +1,4 @@
-import Discord, { Client, TextChannel, User } from 'discord.js';
+import Discord, { Client, Guild, TextChannel, User } from 'discord.js';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -10,7 +10,12 @@ import express from 'express';
 import GameBase from './game-base';
 import { ResultType } from './game-result';
 
-const client = new Client();
+const client = new Client({
+    messageCacheMaxSize: 50,
+    messageCacheLifetime: 300,
+    messageSweepInterval: 60,
+    messageEditHistoryMaxSize: 0,
+});
 
 const snake = new SnakeGame();
 const hangman = new HangmanGame();
@@ -31,6 +36,7 @@ const commandGameMap = new Map<string, GameBase>([
 const playerGameMap = new Map<string, Map<string, GameBase>>();
 
 client.on('ready', () => {
+    client.user?.setActivity('!gbhelp');
     console.log(`Logged in as ${client.user?.tag}!`);
 });
 
@@ -69,7 +75,7 @@ client.on('message', msg => {
                 msg.reply("You must either finish or end your current game (!end) before you can play another!");
             }
             else {
-                game.newGame(msg, player2, () => {
+                game.newGame(msg, player2, (result: GameResult) => {
                     playerGameMap.get(guildId)!.delete(userId);
                 }, []);
                 playerGameMap.get(guildId)!.set(userId, game);
@@ -82,7 +88,7 @@ client.on('message', msg => {
                 playerGameMap.get(guildId)?.delete(userId);
             }
         }
-        else if (command === '!help') {
+        else if (command === '!gbhelp') {
             const embed = new Discord.MessageEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Help - Commands')
