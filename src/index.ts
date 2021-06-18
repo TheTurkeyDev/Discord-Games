@@ -8,7 +8,7 @@ import ChessGame from './chess';
 import TicTacToeGame from './tic-tac-toe';
 import express from 'express';
 import GameBase from './game-base';
-import { ResultType } from './game-result';
+import GameResult, { ResultType } from './game-result';
 
 const client = new Client({
     messageCacheMaxSize: 50,
