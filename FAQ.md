@@ -18,7 +18,7 @@ We hope this helps you!
 ## Questions
 
 ### My bot wont respond to me?
-> On [Line 45](https://github.com/TheTurkeyDev/Discord-Games/blob/master/src/index.ts#L45) of the `index.ts` file, you will see this:
+> On [Line 51](https://github.com/TheTurkeyDev/Discord-Games/blob/master/src/index.ts#L51) of the `index.ts` file, you will see this:
 > ```js
 > if (msg.channel instanceof TextChannel && msg.channel.name && msg.channel.name.includes("bot_land")) {
 > ```
