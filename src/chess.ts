@@ -1,27 +1,28 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
+import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
+import { GameContent } from './game-content';
 
 const reactions = new Map([
-    ["1️⃣", 0],
-    ["2️⃣", 1],
-    ["3️⃣", 2],
-    ["4️⃣", 3],
-    ["5️⃣", 4],
-    ["6️⃣", 5],
-    ["7️⃣", 6],
-    ["8️⃣", 7],
-    ["🇦", 10],
-    ["🇧", 11],
-    ["🇨", 12],
-    ["🇩", 13],
-    ["🇪", 14],
-    ["🇫", 15],
-    ["🇬", 16],
-    ["🇭", 17],
-    ["✔️", 20],
-    ["🔙", 21]
+    ['1️⃣', 0],
+    ['2️⃣', 1],
+    ['3️⃣', 2],
+    ['4️⃣', 3],
+    ['5️⃣', 4],
+    ['6️⃣', 5],
+    ['7️⃣', 6],
+    ['8️⃣', 7],
+    ['🇦', 10],
+    ['🇧', 11],
+    ['🇨', 12],
+    ['🇩', 13],
+    ['🇪', 14],
+    ['🇫', 15],
+    ['🇬', 16],
+    ['🇭', 17],
+    ['✔️', 20],
+    ['🔙', 21]
 ]);
 
 export default class ChessGame extends GameBase {
@@ -31,10 +32,10 @@ export default class ChessGame extends GameBase {
 
     private selectedMove: Move = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
     private selecting = true;
-    private message = "\u200b";
+    private message = '\u200b';
 
     constructor() {
-        super('chess', true);
+        super('chess', true, true);
     }
 
     public initGame(): GameBase {
@@ -42,15 +43,15 @@ export default class ChessGame extends GameBase {
     }
 
     private getGameDesc(): string {
-        return "**Welcome to Chess!**\n"
-            + "- To play simply use the reactions provided to first select your piece you want to move\n"
-            + "- Next hit the check reaction\n"
-            + "- Now select where you want that peice to be moved!\n"
-            + "- To go back to the piece selection hit the back reaction!\n"
-            + "- Hit the check reaction to confirm your movement!\n"
-            + "- If the piece dose not move check below to possibly see why!\n"
-            + "- You do play against an AI, however the AI is not particularly very smart!\n"
-            + "- There is no castling and you must actually take the king to win!\n";
+        return '**Welcome to Chess!**\n'
+            + '- To play simply use the reactions provided to first select your piece you want to move\n'
+            + '- Next hit the check reaction\n'
+            + '- Now select where you want that peice to be moved!\n'
+            + '- To go back to the piece selection hit the back reaction!\n'
+            + '- Hit the check reaction to confirm your movement!\n'
+            + '- If the piece dose not move check below to possibly see why!\n'
+            + '- You do play against an AI, however the AI is not particularly very smart!\n'
+            + '- There is no castling and you must actually take the king to win!\n';
     }
 
     public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
@@ -69,33 +70,37 @@ export default class ChessGame extends GameBase {
         this.player1Turn = true;
         this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
         this.selecting = true;
-        this.message = "\u200b";
+        this.message = '\u200b';
 
         super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
     }
 
-    protected getEmbed(): MessageEmbed {
-        return new Discord.MessageEmbed()
-            .setColor('#08b9bf')
-            .setTitle('Chess')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=yMg9tVZBSPw")
-            .setDescription(this.getGameDesc())
-            .addField('Turn:', this.getDisplayForTurn())
-            .addField('State:', this.selecting ? "Selecting Piece" : "Moving Piece")
-            .addField('Message:', this.message)
-            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(",")}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
-            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-            .setTimestamp();
+    protected getContent(): GameContent {
+        return {
+            embeds: [new Discord.MessageEmbed()
+                .setColor('#d6b881')
+                .setTitle('Chess')
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
+                .setDescription(this.getGameDesc())
+                .addField('Turn:', this.getDisplayForTurn())
+                .addField('State:', this.selecting ? 'Selecting Piece' : 'Moving Piece')
+                .addField('Message:', this.message)
+                .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(',')}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
+                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
+                .setTimestamp()]
+        };
     }
 
-    protected getGameOverEmbed(result: GameResult): MessageEmbed {
-        return new Discord.MessageEmbed()
-            .setColor('#08b9bf')
-            .setTitle('Chess')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=yMg9tVZBSPw")
-            .setDescription("GAME OVER! " + this.getWinnerText(result))
-            .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(",")}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
-            .setTimestamp();
+    protected getGameOverContent(result: GameResult): GameContent {
+        return {
+            embeds: [new Discord.MessageEmbed()
+                .setColor('#d6b881')
+                .setTitle('Chess')
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
+                .setDescription('GAME OVER! ' + this.getWinnerText(result))
+                .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(',')}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
+                .setTimestamp()]
+        };
     }
 
     private endTurn(): void {
@@ -110,7 +115,7 @@ export default class ChessGame extends GameBase {
         });
 
         if (!blackKing || !whiteKing) {
-            this.gameOver({ result: ResultType.WINNER, name: this.getDisplayForTurn(), score: this.gameBoard.join(",") });
+            this.gameOver({ result: ResultType.WINNER, name: this.getDisplayForTurn(), score: this.gameBoard.join(',') });
         }
 
         this.player1Turn = !this.player1Turn;
@@ -121,13 +126,18 @@ export default class ChessGame extends GameBase {
         }
     }
 
-    protected onReaction(reaction: MessageReaction): void {
-        const index = reactions.get(reaction.emoji.name);
+    public onReaction(reaction: MessageReaction): void {
+        const reactName = reaction.emoji.name;
+        if (!reactName) {
+            this.step();
+            return;
+        }
+        const index = reactions.get(reactName);
         if (index === undefined)
             return;
 
         let progress = false;
-        this.message = "-";
+        this.message = '-';
 
         if (index == 20) {
             progress = true;
@@ -153,28 +163,27 @@ export default class ChessGame extends GameBase {
         const currX = this.selecting ? this.selectedMove.fx : this.selectedMove.tx;
         const currY = this.selecting ? this.selectedMove.fy : this.selectedMove.ty;
 
-        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).catch(e => super.handleError(e, 'remove reactions'));
         if (progress && currY != -1 && currX != -1) {
             const index = (this.selectedMove.fy * 8) + this.selectedMove.fx;
             if (this.selecting) {
                 const piece = this.gameBoard[index];
                 if (piece >= 10 && this.player1Turn) {
-                    this.message = "\u200b";
+                    this.message = '\u200b';
                     this.selecting = false;
                     this.selectedMove.tx = this.selectedMove.fx;
                     this.selectedMove.ty = this.selectedMove.fy;
                 }
                 else if (piece > 0 && piece < 10 && !this.player1Turn) {
-                    this.message = "\u200b";
+                    this.message = '\u200b';
                     this.selecting = false;
                     this.selectedMove.tx = this.selectedMove.fx;
                     this.selectedMove.ty = this.selectedMove.fy;
                 }
                 else if (piece == 0) {
-                    this.message = "There is no piece at that location!";
+                    this.message = 'There is no piece at that location!';
                 }
                 else {
-                    this.message = "You cannot move that piece!";
+                    this.message = 'You cannot move that piece!';
                 }
             }
             else {
@@ -194,6 +203,7 @@ export default class ChessGame extends GameBase {
         }
         this.step();
     }
+    public onInteraction(interaction: Interaction): void { }
 
     private canPieceMoveTo(piece: number, selectedMove: Move): MoveCheck {
         const blackPiece = piece < 10;
@@ -208,6 +218,7 @@ export default class ChessGame extends GameBase {
             case 4:
                 return this.checkBishopMove(blackPiece, selectedMove);
             case 5:
+                // eslint-disable-next-line no-case-declarations
                 const rookMove = this.checkRookMove(blackPiece, selectedMove);
                 if (rookMove.valid)
                     return this.checkBishopMove(blackPiece, selectedMove);
@@ -215,7 +226,7 @@ export default class ChessGame extends GameBase {
             case 6:
                 return this.checkKingMove(blackPiece, selectedMove);
         }
-        return { valid: false, msg: "Invalid Piece!" };
+        return { valid: false, msg: 'Invalid Piece!' };
     }
 
     private checkPawnMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
@@ -223,20 +234,20 @@ export default class ChessGame extends GameBase {
         const yDiff = selectedMove.fy - selectedMove.ty;
         const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         if (pieceAt != 0 && ((blackPiece && pieceAt < 10) || (!blackPiece && pieceAt > 10)))
-            return { valid: false, msg: "You already have a piece there!" };
+            return { valid: false, msg: 'You already have a piece there!' };
 
         const pieceAtDiff = pieceAt != 0 && ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
 
         if (Math.abs(xDiff) > 1) {
-            return { valid: false, msg: "A Pawn cannot move like that!" };
+            return { valid: false, msg: 'A Pawn cannot move like that!' };
         }
         else if (xDiff == 0) {
             if (yDiff > 0 && !blackPiece) {
                 const checkJump = this.checkJumps([{ x: selectedMove.fx, y: selectedMove.fy - 1 }]);
                 if (checkJump.valid) {
                     if ((yDiff == 2 && selectedMove.fy == 6) || (yDiff == 1 && !pieceAtDiff))
-                        return { valid: true, msg: "A Pawn cannot top that position!" };
-                    return { valid: false, msg: "" };
+                        return { valid: true, msg: 'A Pawn cannot top that position!' };
+                    return { valid: false, msg: '' };
                 }
                 else {
                     return checkJump;
@@ -246,21 +257,21 @@ export default class ChessGame extends GameBase {
                 const checkJump = this.checkJumps([{ x: selectedMove.fx, y: selectedMove.fy + 1 }]);
                 if (checkJump.valid) {
                     if ((yDiff == -2 && selectedMove.fy == 1) || (yDiff == -1 && !pieceAtDiff))
-                        return { valid: true, msg: "A Pawn cannot top that position!" };
-                    return { valid: false, msg: "" };
+                        return { valid: true, msg: 'A Pawn cannot top that position!' };
+                    return { valid: false, msg: '' };
                 }
                 else {
                     return checkJump;
                 }
             }
             else {
-                return { valid: false, msg: "A Pawn cannot top that position!" };
+                return { valid: false, msg: 'A Pawn cannot top that position!' };
             }
         }
         else {
             if (Math.abs(yDiff) == 1 && pieceAtDiff)
-                return { valid: true, msg: "" };
-            return { valid: false, msg: "You cannot take that piece!" };
+                return { valid: true, msg: '' };
+            return { valid: false, msg: 'You cannot take that piece!' };
         }
     }
 
@@ -284,7 +295,7 @@ export default class ChessGame extends GameBase {
                 betweenPos.push({ x: selectedMove.fx, y: i });
             return this.checkJumps(betweenPos);
         }
-        return { valid: false, msg: "A Rook cannot move like that" };
+        return { valid: false, msg: 'A Rook cannot move like that' };
     }
 
     private checkKnightMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
@@ -293,10 +304,10 @@ export default class ChessGame extends GameBase {
         const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
         if (Math.abs(xDiff) == 2 && Math.abs(yDiff) == 1 && pieceAtDiff)
-            return { valid: true, msg: "" };
+            return { valid: true, msg: '' };
         else if (Math.abs(xDiff) == 1 && Math.abs(yDiff) == 2 && pieceAtDiff)
-            return { valid: true, msg: "" };
-        return { valid: false, msg: "A Knight cannot move like that" };
+            return { valid: true, msg: '' };
+        return { valid: false, msg: 'A Knight cannot move like that' };
     }
 
     private checkBishopMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
@@ -316,7 +327,7 @@ export default class ChessGame extends GameBase {
             }
             return this.checkJumps(betweenPos);
         }
-        return { valid: false, msg: "A Bishop cannot move like that" };
+        return { valid: false, msg: 'A Bishop cannot move like that' };
     }
 
     private checkKingMove(blackPiece: boolean, selectedMove: Move): MoveCheck {
@@ -326,16 +337,16 @@ export default class ChessGame extends GameBase {
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
 
         if (Math.abs(xDiff) <= 1 && Math.abs(yDiff) <= 1 && pieceAtDiff) {
-            return { valid: true, msg: "" };
+            return { valid: true, msg: '' };
         }
-        return { valid: false, msg: "A King cannot move like that" };
+        return { valid: false, msg: 'A King cannot move like that' };
     }
 
     private checkJumps(positions: Position[]): MoveCheck {
         for (let i = 0; i < positions.length; i++)
             if (this.gameBoard[(positions[i].y * 8) + positions[i].x] != 0)
-                return { valid: false, msg: "Cannot jump over piece at " + positions[i].x + ", " + positions[i].y };
-        return { valid: true, msg: "" };
+                return { valid: false, msg: 'Cannot jump over piece at ' + positions[i].x + ', ' + positions[i].y };
+        return { valid: true, msg: '' };
     }
 
 
@@ -344,7 +355,7 @@ export default class ChessGame extends GameBase {
      */
 
     private makeBestMove(): void {
-        const depth: number = 4;
+        const depth = 4;
         const bestMove: Move = this.minimaxRoot(depth, true);
         this.gameBoard[bestMove.ty * 8 + bestMove.tx] = this.gameBoard[bestMove.fy * 8 + bestMove.fx];
         this.gameBoard[bestMove.fy * 8 + bestMove.fx] = 0;
@@ -352,7 +363,7 @@ export default class ChessGame extends GameBase {
 
     private minimaxRoot(depth: number, isMaximisingPlayer: boolean): Move {
         const newGameMoves: Move[] = this.getValidMoves();
-        let bestMove: number = -9999;
+        let bestMove = -9999;
         let bestMoveFound!: Move;
 
         newGameMoves.forEach(gameMove => {
@@ -363,7 +374,7 @@ export default class ChessGame extends GameBase {
                 bestMove = value;
                 bestMoveFound = gameMove;
             }
-        })
+        });
         return bestMoveFound;
     }
 
@@ -424,9 +435,9 @@ export default class ChessGame extends GameBase {
             case 6:
                 return 900 + (isWhite ? kingEvalWhite[y][x] : kingEvalBlack[y][x]);
             default:
-                throw "Unknown piece type: " + piece;
+                throw 'Unknown piece type: ' + piece;
         }
-    };
+    }
 
     private getValidMoves(): Move[] {
         const validMoves: Move[] = [];
@@ -465,7 +476,7 @@ export default class ChessGame extends GameBase {
     }
 
     private getDisplayForTurn(): string {
-        return this.player1Turn ? this.gameStarter.username : (this.isMultiplayerGame ? this.player2!.username : "CPU");
+        return this.player1Turn ? this.gameStarter.username : (this.isMultiplayerGame ? this.player2?.username ?? 'ERR' : 'CPU');
     }
 }
 

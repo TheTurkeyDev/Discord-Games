@@ -1,20 +1,21 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
+import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
+import { GameContent } from './game-content';
 
 const gameBoard = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 
 const reactions = new Map([
-    ["1️⃣", 1],
-    ["2️⃣", 2],
-    ["3️⃣", 3],
-    ["4️⃣", 4],
-    ["5️⃣", 5],
-    ["6️⃣", 6],
-    ["7️⃣", 7],
-    ["8️⃣", 8],
-    ["9️⃣", 9],
+    ['1️⃣', 1],
+    ['2️⃣', 2],
+    ['3️⃣', 3],
+    ['4️⃣', 4],
+    ['5️⃣', 5],
+    ['6️⃣', 6],
+    ['7️⃣', 7],
+    ['8️⃣', 8],
+    ['9️⃣', 9],
 ]);
 
 const NO_MOVE = 0;
@@ -25,12 +26,12 @@ const cpu_mistake_chance = 5;
 
 export default class TicTacToeGame extends GameBase {
 
-    private message = "";
+    private message = '';
     private computersMove: Position = { x: 0, y: 0 };
     private winningPoints: Position = { x: -1, y: -1 };
 
     constructor() {
-        super('tictactoe', true);
+        super('tictactoe', true, true);
     }
 
     public initGame(): GameBase {
@@ -62,33 +63,41 @@ export default class TicTacToeGame extends GameBase {
         super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
     }
 
-    protected getEmbed(): MessageEmbed {
-        return new Discord.MessageEmbed()
-            .setColor('#ab0e0e')
-            .setTitle('Tic-Tac-Toe')
-            .setDescription(this.message)
-            .addField('Turn:', this.getTurn())
-            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=tgY5rpPixlA")
-            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-            .setTimestamp();
+    protected getContent(): GameContent {
+        return {
+            embeds: [new Discord.MessageEmbed()
+                .setColor('#ab0e0e')
+                .setTitle('Tic-Tac-Toe')
+                .setDescription(this.message)
+                .addField('Turn:', this.getTurn())
+                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
+                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
+                .setTimestamp()]
+        };
     }
 
-    protected getGameOverEmbed(result: GameResult): MessageEmbed {
+    protected getGameOverContent(result: GameResult): GameContent {
 
-        return new Discord.MessageEmbed()
-            .setColor('#ab0e0e')
-            .setTitle('Tic-Tac-Toe')
-            .setDescription("GAME OVER! " + this.getWinnerText(result))
-            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=tgY5rpPixlA")
-            .setTimestamp();
+        return {
+            embeds: [new Discord.MessageEmbed()
+                .setColor('#ab0e0e')
+                .setTitle('Tic-Tac-Toe')
+                .setDescription('GAME OVER! ' + this.getWinnerText(result))
+                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
+                .setTimestamp()]
+        };
     }
 
-    protected onReaction(reaction: MessageReaction): void {
-        this.gameEmbed.reactions.cache.get(reaction.emoji.name)?.remove();
+    public onReaction(reaction: MessageReaction): void {
+        const reactName = reaction.emoji.name;
+        if (!reactName) {
+            this.step();
+            return;
+        }
 
-        let index = reactions.get(reaction.emoji.name);
+        let index = reactions.get(reactName);
         if (index === undefined)
             return;
 
@@ -106,11 +115,8 @@ export default class TicTacToeGame extends GameBase {
         if (!this.isGameOver() && this.player2 == null && !this.player1Turn) {
             //Make CPU Move
             this.minimax(0, PLAYER_2);
-            let cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
-            Object.keys(reactions).forEach(k => {
-                if (reactions.get(k) == cpuIndex && this.gameEmbed.reactions.cache.has(k))
-                    this.gameEmbed.reactions.cache.get(k)?.remove();
-            });
+            const cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;
+
             this.placeMove(this.computersMove.x, this.computersMove.y, PLAYER_2);
             this.player1Turn = true;
         }
@@ -128,8 +134,10 @@ export default class TicTacToeGame extends GameBase {
         }
     }
 
+    public onInteraction(interaction: Interaction): void { }
+
     private getTurn(): string {
-        return this.player1Turn ? this.gameStarter.username : (this.player2 ? this.player2!.username : 'CPU');
+        return this.player1Turn ? this.gameStarter.username : (this.player2 ? this.player2?.username : 'CPU');
     }
 
     private isGameOver(): boolean {

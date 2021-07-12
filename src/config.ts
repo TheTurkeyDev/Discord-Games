@@ -1,3 +1,3 @@
-const token = "<TOKEN GO HERE>";
+const token = '<TOKEN GO HERE>';
 
 export { token };

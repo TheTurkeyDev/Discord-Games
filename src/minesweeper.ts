@@ -1,20 +1,20 @@
 import GameBase from './game-base';
-import Discord, { Message, MessageEmbed, MessageReaction, User } from 'discord.js';
+import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
+import { GameContent } from './game-content';
 
 const WIDTH = 9;
 const HEIGHT = 8;
-const gameBoard: string[] = [];
-const bombLocs: boolean[] = [];
-
-const charMap = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
+const charMap = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
 
 export default class MinesweeperGame extends GameBase {
 
     private flagging = false;
+    private gameBoard: string[] = [];
+    private bombLocs: boolean[] = [];
 
     constructor() {
-        super('minesweeper', false);
+        super('minesweeper', false, true);
     }
 
     public initGame(): GameBase {
@@ -22,20 +22,20 @@ export default class MinesweeperGame extends GameBase {
     }
 
     private gameBoardToString(links = true): string {
-        let str = "";
+        let str = '';
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 const index = y * WIDTH + x;
-                if (gameBoard[index] === "⬜" || gameBoard[index] === "🚩") {
+                if (this.gameBoard[index] === '⬜' || this.gameBoard[index] === '🚩') {
                     if (links)
-                        str += "[" + gameBoard[index] + "](http://theturkey.dev/" + charMap[x] + charMap[y] + (x == 2 && y == 2 ? "2" : "") + ")";
+                        str += '[' + this.gameBoard[index] + '](http://theturkey.dev/' + charMap[x] + charMap[y] + (x == 2 && y == 2 ? '2' : '') + ')';
                     else
-                        str += gameBoard[index];
+                        str += this.gameBoard[index];
                 } else {
-                    str += gameBoard[index];
+                    str += this.gameBoard[index];
                 }
             }
-            str += "\n";
+            str += '\n';
         }
         return str;
     }
@@ -46,8 +46,8 @@ export default class MinesweeperGame extends GameBase {
 
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
-                gameBoard[y * WIDTH + x] = "⬜";
-                bombLocs[y * WIDTH + x] = false;
+                this.gameBoard[y * WIDTH + x] = '⬜';
+                this.bombLocs[y * WIDTH + x] = false;
             }
         }
 
@@ -57,8 +57,8 @@ export default class MinesweeperGame extends GameBase {
 
             const index = y * WIDTH + x;
 
-            if (!bombLocs[index])
-                bombLocs[index] = true;
+            if (!this.bombLocs[index])
+                this.bombLocs[index] = true;
             else
                 i--;
         }
@@ -67,25 +67,29 @@ export default class MinesweeperGame extends GameBase {
         super.newGame(msg, player2, onGameEnd, ['👆', '🚩']);
     }
 
-    protected getEmbed(): MessageEmbed {
-        return new Discord.MessageEmbed()
-            .setColor('#c7c7c7')
-            .setTitle('Minesweeper')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=j2ylF1AX1RY")
-            .setDescription(this.gameBoardToString())
-            .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
-            .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
-            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-            .setTimestamp();
+    protected getContent(): GameContent {
+        return {
+            embeds: [new Discord.MessageEmbed()
+                .setColor('#c7c7c7')
+                .setTitle('Minesweeper')
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
+                .setDescription(this.gameBoardToString())
+                .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
+                .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
+                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
+                .setTimestamp()]
+        };
     }
 
-    protected getGameOverEmbed(result: GameResult): MessageEmbed {
-        return new Discord.MessageEmbed()
-            .setColor('#c7c7c7')
-            .setTitle('Minesweeper')
-            .setAuthor("Made By: TurkeyDev", "https://site.theturkey.dev/images/turkey_avatar.png", "https://www.youtube.com/watch?v=j2ylF1AX1RY")
-            .setDescription(`**GAME OVER!**\n${this.getWinnerText(result)}\n\n${this.gameBoardToString(false)}`)
-            .setTimestamp();
+    protected getGameOverContent(result: GameResult): GameContent {
+        return {
+            embeds: [new Discord.MessageEmbed()
+                .setColor('#c7c7c7')
+                .setTitle('Minesweeper')
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
+                .setDescription(`**GAME OVER!**\n${this.getWinnerText(result)}\n\n${this.gameBoardToString(false)}`)
+                .setTimestamp()]
+        };
     }
 
     protected step(): void {
@@ -94,11 +98,11 @@ export default class MinesweeperGame extends GameBase {
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
                 const index = y * WIDTH + x;
-                if (gameBoard[index] === "⬜" && !bombLocs[index])
+                if (this.gameBoard[index] === '⬜' && !this.bombLocs[index])
                     win = false;
-                if (gameBoard[index] === "💣")
+                if (this.gameBoard[index] === '💣')
                     lose = true;
-                if (gameBoard[index] === "🚩" && !bombLocs[index])
+                if (this.gameBoard[index] === '🚩' && !this.bombLocs[index])
                     win = false;
             }
         }
@@ -114,7 +118,7 @@ export default class MinesweeperGame extends GameBase {
             super.step();
     }
 
-    protected onReaction(reaction: MessageReaction): void {
+    public onReaction(reaction: MessageReaction): void {
         if (reaction.emoji.name === '👆') {
             this.flagging = false;
         }
@@ -122,25 +126,23 @@ export default class MinesweeperGame extends GameBase {
             this.flagging = true;
         }
 
-
-        reaction.users.remove(reaction.users.cache.filter(user => user.id !== this.gameEmbed.author.id).first()?.id).then(() => {
-            this.step();
-        }).catch(e => super.handleError(e, 'remove reaction'));
+        this.step();
     }
+    public onInteraction(interaction: Interaction): void { }
 
     private showBombs(): void {
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
-                if (bombLocs[y * WIDTH + x])
-                    gameBoard[y * WIDTH + x] = "💣";
+                if (this.bombLocs[y * WIDTH + x])
+                    this.gameBoard[y * WIDTH + x] = '💣';
             }
         }
     }
 
     private uncover(col: number, row: number) {
         const index = row * WIDTH + col;
-        if (bombLocs[index]) {
-            gameBoard[index] = "💣";
+        if (this.bombLocs[index]) {
+            this.gameBoard[index] = '💣';
         }
         else {
             let bombsArround = 0;
@@ -151,12 +153,12 @@ export default class MinesweeperGame extends GameBase {
                     if (x === 0 && y === 0)
                         continue;
                     const i2 = (row + y) * WIDTH + (col + x);
-                    if (bombLocs[i2])
+                    if (this.bombLocs[i2])
                         bombsArround++;
                 }
             }
             if (bombsArround == 0) {
-                gameBoard[index] = "⬛";
+                this.gameBoard[index] = '⬛';
                 for (let y = -1; y < 2; y++) {
                     for (let x = -1; x < 2; x++) {
                         if (col + x < 0 || col + x >= WIDTH || row + y < 0 || row + y >= HEIGHT)
@@ -164,43 +166,43 @@ export default class MinesweeperGame extends GameBase {
                         if (x === 0 && y === 0)
                             continue;
                         const i2 = (row + y) * WIDTH + (col + x);
-                        if (gameBoard[i2] === "⬜")
+                        if (this.gameBoard[i2] === '⬜')
                             this.uncover(col + x, row + y);
                     }
                 }
             }
             else if (bombsArround == 1) {
-                gameBoard[index] = "1️⃣";
+                this.gameBoard[index] = '1️⃣';
             }
             else if (bombsArround == 2) {
-                gameBoard[index] = "2️⃣";
+                this.gameBoard[index] = '2️⃣';
             }
             else if (bombsArround == 3) {
-                gameBoard[index] = "3️⃣";
+                this.gameBoard[index] = '3️⃣';
             }
             else if (bombsArround == 4) {
-                gameBoard[index] = "4️⃣";
+                this.gameBoard[index] = '4️⃣';
             }
             else if (bombsArround == 5) {
-                gameBoard[index] = "5️⃣";
+                this.gameBoard[index] = '5️⃣';
             }
             else if (bombsArround == 6) {
-                gameBoard[index] = "6️⃣";
+                this.gameBoard[index] = '6️⃣';
             }
             else if (bombsArround == 7) {
-                gameBoard[index] = "7️⃣";
+                this.gameBoard[index] = '7️⃣';
             }
             else if (bombsArround == 8) {
-                gameBoard[index] = "8️⃣";
+                this.gameBoard[index] = '8️⃣';
             }
         }
     }
 
-    public makeMove(col: number, row: number) {
+    public makeMove(col: number, row: number): void {
         const index = row * WIDTH + col;
-        if (gameBoard[index] === "⬜") {
+        if (this.gameBoard[index] === '⬜') {
             if (this.flagging) {
-                gameBoard[index] = "🚩";
+                this.gameBoard[index] = '🚩';
             }
             else {
                 this.uncover(col, row);
@@ -208,8 +210,8 @@ export default class MinesweeperGame extends GameBase {
 
             this.step();
         }
-        else if (gameBoard[index] === "🚩" && this.flagging) {
-            gameBoard[index] = "⬜";
+        else if (this.gameBoard[index] === '🚩' && this.flagging) {
+            this.gameBoard[index] = '⬜';
         }
     }
 
