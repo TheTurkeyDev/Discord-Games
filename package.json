@@ -10,7 +10,7 @@
   "author": "TurkeyDev",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^13.0.0-dev.d433fe8.1626004976",
+    "discord.js": "^13.0.0",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
     "typescript": "^4.3.4"

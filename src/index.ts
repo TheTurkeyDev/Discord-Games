@@ -108,7 +108,7 @@ client.on('messageCreate', msg => {
             const embed = new Discord.MessageEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Help - Commands')
-                .setDescription('!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess\n!tictactoe - Play TicTacToe')
+                .setDescription('!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess\n!tictactoe - Play TicTacToe\n!flood - Play Flood')
                 .setTimestamp();
             msg.channel.send({ embeds: [embed] });
         }
