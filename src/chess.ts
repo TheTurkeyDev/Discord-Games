@@ -247,7 +247,7 @@ export default class ChessGame extends GameBase {
                 if (checkJump.valid) {
                     if ((yDiff == 2 && selectedMove.fy == 6) || (yDiff == 1 && !pieceAtDiff))
                         return { valid: true, msg: 'A Pawn cannot top that position!' };
-                    return { valid: false, msg: '' };
+                    return { valid: false, msg: '\u200b' };
                 }
                 else {
                     return checkJump;
@@ -258,7 +258,7 @@ export default class ChessGame extends GameBase {
                 if (checkJump.valid) {
                     if ((yDiff == -2 && selectedMove.fy == 1) || (yDiff == -1 && !pieceAtDiff))
                         return { valid: true, msg: 'A Pawn cannot top that position!' };
-                    return { valid: false, msg: '' };
+                    return { valid: false, msg: '\u200b' };
                 }
                 else {
                     return checkJump;
@@ -270,7 +270,7 @@ export default class ChessGame extends GameBase {
         }
         else {
             if (Math.abs(yDiff) == 1 && pieceAtDiff)
-                return { valid: true, msg: '' };
+                return { valid: true, msg: '\u200b' };
             return { valid: false, msg: 'You cannot take that piece!' };
         }
     }
@@ -304,9 +304,9 @@ export default class ChessGame extends GameBase {
         const pieceAt = this.gameBoard[(selectedMove.ty * 8) + selectedMove.tx];
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
         if (Math.abs(xDiff) == 2 && Math.abs(yDiff) == 1 && pieceAtDiff)
-            return { valid: true, msg: '' };
+            return { valid: true, msg: '\u200b' };
         else if (Math.abs(xDiff) == 1 && Math.abs(yDiff) == 2 && pieceAtDiff)
-            return { valid: true, msg: '' };
+            return { valid: true, msg: '\u200b' };
         return { valid: false, msg: 'A Knight cannot move like that' };
     }
 
@@ -337,7 +337,7 @@ export default class ChessGame extends GameBase {
         const pieceAtDiff = pieceAt == 0 || ((blackPiece && pieceAt > 10) || (!blackPiece && pieceAt < 10));
 
         if (Math.abs(xDiff) <= 1 && Math.abs(yDiff) <= 1 && pieceAtDiff) {
-            return { valid: true, msg: '' };
+            return { valid: true, msg: '\u200b' };
         }
         return { valid: false, msg: 'A King cannot move like that' };
     }
@@ -346,7 +346,7 @@ export default class ChessGame extends GameBase {
         for (let i = 0; i < positions.length; i++)
             if (this.gameBoard[(positions[i].y * 8) + positions[i].x] != 0)
                 return { valid: false, msg: 'Cannot jump over piece at ' + positions[i].x + ', ' + positions[i].y };
-        return { valid: true, msg: '' };
+        return { valid: true, msg: '\u200b' };
     }
 
 
