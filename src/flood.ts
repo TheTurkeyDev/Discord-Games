@@ -51,7 +51,7 @@ export default class FloodGame extends GameBase {
         const embed = new Discord.MessageEmbed()
             .setColor('#08b9bf')
             .setTitle('Flood')
-            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.turn.toString())
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
@@ -69,7 +69,7 @@ export default class FloodGame extends GameBase {
             embeds: [new Discord.MessageEmbed()
                 .setColor('#08b9bf')
                 .setTitle('Flood')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
                 .setDescription(`GAME OVER!\n${turnResp}`)
                 .setTimestamp()],
             components: []

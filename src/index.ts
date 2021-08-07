@@ -13,8 +13,10 @@ import FloodGame from './flood';
 
 const client = new Client({
     makeCache: Options.cacheWithLimits({
-        MessageManager: 50,
+        MessageManager: 30,
         PresenceManager: 0,
+        UserManager: 0,
+        ReactionManager: 30,
     }),
     messageCacheLifetime: 300,
     messageSweepInterval: 60,
