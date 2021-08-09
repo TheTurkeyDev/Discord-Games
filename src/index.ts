@@ -16,7 +16,7 @@ const client = new Client({
         MessageManager: 30,
         PresenceManager: 0,
         UserManager: 0,
-        ReactionManager: 30,
+        ReactionManager: 0,
     }),
     messageCacheLifetime: 300,
     messageSweepInterval: 60,
