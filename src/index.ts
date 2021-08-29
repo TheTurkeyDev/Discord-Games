@@ -18,8 +18,6 @@ const client = new Client({
         UserManager: 0,
         ReactionManager: 0,
     }),
-    messageCacheLifetime: 300,
-    messageSweepInterval: 60,
     intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS]
 });
 
@@ -112,7 +110,7 @@ client.on('messageCreate', msg => {
                 .setTitle('Help - Commands')
                 .setDescription('!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess\n!tictactoe - Play TicTacToe\n!flood - Play Flood')
                 .setTimestamp();
-            msg.channel.send({ embeds: [embed] });
+            msg.channel.send({ embeds: [embed] }).catch(e => console.log('Failed to send help message'));
         }
     }
 });
