@@ -24,10 +24,6 @@ export default class Connect4Game extends GameBase {
         this.gameBoard = [];
     }
 
-    public initGame(): GameBase {
-        return new Connect4Game();
-    }
-
     private gameBoardToString(): string {
         let str = '';
         if (!this.player2 == null)

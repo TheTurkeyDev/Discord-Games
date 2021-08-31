@@ -38,10 +38,6 @@ export default class ChessGame extends GameBase {
         super('chess', true, true);
     }
 
-    public initGame(): GameBase {
-        return new ChessGame();
-    }
-
     private getGameDesc(): string {
         return '**Welcome to Chess!**\n'
             + '- To play simply use the reactions provided to first select your piece you want to move\n'

@@ -10,6 +10,7 @@ import express from 'express';
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import FloodGame from './flood';
+import TwentyFortyEightGame from './2048';
 
 const client = new Client({
     makeCache: Options.cacheWithLimits({
@@ -23,15 +24,19 @@ const client = new Client({
 
 const minesweeper = new MinesweeperGame();
 
-const commandGameMap = new Map<string, GameBase>([
-    ['!snake', new SnakeGame()],
-    ['!hangman', new HangmanGame()],
-    ['!connect4', new Connect4Game()],
-    ['!minesweeper', minesweeper],
-    ['!chess', new ChessGame()],
-    ['!tictactoe', new TicTacToeGame()],
-    ['!flood', new FloodGame()]
-]);
+type CommandObject = {
+    [key: string]: () => GameBase;
+}
+const commandGameMap: CommandObject = {
+    '!snake': () => new SnakeGame(),
+    '!hangman': () => new HangmanGame(),
+    '!connect4': () => new Connect4Game(),
+    '!minesweeper': () => minesweeper,
+    '!chess': () => new ChessGame(),
+    '!tictactoe': () => new TicTacToeGame(),
+    '!flood': () => new FloodGame(),
+    '!2048': () => new TwentyFortyEightGame(),
+};
 
 const playerGameMap = new Map<string, Map<string, GameBase>>();
 
@@ -49,9 +54,8 @@ client.on('messageCreate', msg => {
     const guildId = msg.guild?.id;
     const userId = msg.author.id;
     if (msg.channel instanceof TextChannel && msg.channel.name && !!guildId) {
-        const commandGame = commandGameMap.get(command);
-        if (commandGame) {
-            const game = commandGame.initGame();
+        if (Object.keys(commandGameMap).includes(command)) {
+            const game = commandGameMap[command]();
 
             let player2: User | undefined;
             if (msg.mentions.members != null && msg.mentions.members?.size > 0) {

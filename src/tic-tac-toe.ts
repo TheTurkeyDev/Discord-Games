@@ -34,10 +34,6 @@ export default class TicTacToeGame extends GameBase {
         super('tictactoe', true, true);
     }
 
-    public initGame(): GameBase {
-        return new TicTacToeGame();
-    }
-
     private getGameboardStr(): string {
         let str = '';
         for (let y = 0; y < 3; y++) {

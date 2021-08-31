@@ -26,10 +26,6 @@ export default class SnakeGame extends GameBase {
         }
     }
 
-    public initGame(): GameBase {
-        return new SnakeGame();
-    }
-
     protected getGameboard(): string {
         let str = '';
         for (let y = 0; y < HEIGHT; y++) {

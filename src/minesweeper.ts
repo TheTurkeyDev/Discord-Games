@@ -17,10 +17,6 @@ export default class MinesweeperGame extends GameBase {
         super('minesweeper', false, true);
     }
 
-    public initGame(): GameBase {
-        return new MinesweeperGame();
-    }
-
     private gameBoardToString(links = true): string {
         let str = '';
         for (let y = 0; y < HEIGHT; y++) {

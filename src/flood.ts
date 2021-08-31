@@ -16,16 +16,10 @@ export default class FloodGame extends GameBase {
     constructor() {
         super('flood', false, false);
         this.gameBoard = [];
-        this.turn = 1;
-    }
-
-    public initGame(): GameBase {
-        const game = new FloodGame();
         for (let y = 0; y < HEIGHT; y++)
             for (let x = 0; x < WIDTH; x++)
-                game.gameBoard[y * WIDTH + x] = Object.values(SQUARES)[Math.floor(Math.random() * Object.keys(SQUARES).length)];
-
-        return game;
+                this.gameBoard[y * WIDTH + x] = Object.values(SQUARES)[Math.floor(Math.random() * Object.keys(SQUARES).length)];
+        this.turn = 1;
     }
 
     private gameBoardToString(): string {

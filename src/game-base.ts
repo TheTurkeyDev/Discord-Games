@@ -18,7 +18,6 @@ export default abstract class GameBase {
     public reactions: string[] = [];
     protected gameTimeoutId: NodeJS.Timeout | undefined;
 
-    public abstract initGame(): GameBase;
     protected abstract getContent(): GameContent;
     protected abstract getGameOverContent(result: GameResult): GameContent;
     public abstract onReaction(reaction: MessageReaction): void;
@@ -113,12 +112,23 @@ export default abstract class GameBase {
         if (result.result !== ResultType.FORCE_END) {
             this.onGameEnd(result);
             if (this.usesReactions) {
-                this.gameMessage?.edit(this.getGameOverContent(result));
+                try {
+                    this.gameMessage?.edit(this.getGameOverContent(result)).catch(e => this.handleError(e, ''));
+                } catch (e) {
+                    //This is needed because apparently the above catch doesn't catch when the message doesn't have a channel?
+                    console.log(e);
+                }
+
                 this.gameMessage?.reactions.removeAll();
             }
         }
         else {
-            this.gameMessage?.edit(this.getGameOverContent(result));
+            try {
+                this.gameMessage?.edit(this.getGameOverContent(result)).catch(e => this.handleError(e, ''));
+            } catch (e) {
+                //This is needed because apparently the above catch doesn't catch when the message doesn't have a channel?
+                console.log(e);
+            }
             if (this.gameTimeoutId)
                 clearTimeout(this.gameTimeoutId);
         }

@@ -54,10 +54,6 @@ export default class HangmanGame extends GameBase {
         super('hangman', false, true);
     }
 
-    public initGame(): GameBase {
-        return new HangmanGame();
-    }
-
     public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
