@@ -156,6 +156,22 @@ export default class TwentyFortyEightGame extends GameBase {
         return true;
     }
 
+    private numMovesPossible = () => {
+        let numMoves = 0;
+        for (let y = 0; y < HEIGHT; y++) {
+            for (let x = 0; x < WIDTH; x++) {
+                const pos = { x, y };
+                const posNum = this.gameBoard[pos.y * WIDTH + pos.x];
+                [Direction.DOWN, Direction.LEFT, Direction.RIGHT, Direction.UP].forEach(dir => {
+                    const newPos = move(pos, dir);
+                    if (isInside(newPos, WIDTH, HEIGHT) && (this.gameBoard[newPos.y * WIDTH + newPos.x] === 0 || this.gameBoard[newPos.y * WIDTH + newPos.x] === posNum))
+                        numMoves++;
+                });
+            }
+        }
+        return numMoves;
+    }
+
     public onInteraction(interaction: Interaction): void {
         if (!interaction.isButton())
             return;
@@ -179,13 +195,19 @@ export default class TwentyFortyEightGame extends GameBase {
 
         if (moved)
             this.placeRandomNewTile();
-        else if (this.isBoardFull())
-            this.gameOver({ result: ResultType.LOSER, name: this.gameStarter.username, score: `${this.score}` });
 
         super.step();
 
-        if (this.isInGame())
+        if (this.isBoardFull() && this.numMovesPossible() == 0) {
+            const result = { result: ResultType.LOSER, name: this.gameStarter.username, score: `${this.score}` };
+            interaction.update(this.getGameOverContent(result));
+            this.gameOver(result);
+        }
+        else {
             interaction.update(this.getContent());
+        }
+
+
     }
     public onReaction(reaction: MessageReaction): void { }
 }
