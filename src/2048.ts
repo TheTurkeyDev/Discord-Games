@@ -48,7 +48,7 @@ export default class TwentyFortyEightGame extends GameBase {
         const embed = new MessageEmbed()
             .setColor('#f2e641')
             .setTitle('2048')
-            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
             .setImage(`https://api.theturkey.dev/discordgames/gen2048?gb=${this.gameBoard.join(',')}`)
             .addField('Score:', this.score.toString())
             .setFooter(`Currently Playing: ${this.gameStarter.username}`)
@@ -65,7 +65,7 @@ export default class TwentyFortyEightGame extends GameBase {
             embeds: [new MessageEmbed()
                 .setColor('#f2e641')
                 .setTitle('2048')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
+                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
                 .setImage(`https://api.theturkey.dev/discordgames/gen2048?gb=${this.gameBoard.join(',')}`)
                 .setDescription(`GAME OVER!\nScore: ${this.score}`)
                 .setTimestamp()],
