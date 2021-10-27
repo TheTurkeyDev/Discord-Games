@@ -1,22 +1,11 @@
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordMessageButton } from 'discord-minimal';
 import GameBase from './game-base';
-import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
 import { GameContent } from './game-content';
+import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
 
 const gameBoard = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-
-const reactions = new Map([
-    ['1️⃣', 1],
-    ['2️⃣', 2],
-    ['3️⃣', 3],
-    ['4️⃣', 4],
-    ['5️⃣', 5],
-    ['6️⃣', 6],
-    ['7️⃣', 7],
-    ['8️⃣', 8],
-    ['9️⃣', 9],
-]);
 
 const NO_MOVE = 0;
 const PLAYER_1 = 1;
@@ -31,7 +20,7 @@ export default class TicTacToeGame extends GameBase {
     private winningPoints: Position = { x: -1, y: -1 };
 
     constructor() {
-        super('tictactoe', true, true);
+        super('tictactoe', true);
     }
 
     private getGameboardStr(): string {
@@ -44,24 +33,26 @@ export default class TicTacToeGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
-        for (let y = 0; y < 3; y++) {
-            for (let x = 0; x < 3; x++) {
+        for (let y = 0; y < 3; y++)
+            for (let x = 0; x < 3; x++)
                 gameBoard[x][y] = NO_MOVE;
-            }
-        }
 
         this.winningPoints = { x: -1, y: -1 };
 
-        super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
+        super.newGame(msg, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
+        const row1 = super.createMessageActionRowButton([['1', '1️⃣'], ['2', '2️⃣'], ['3', '3️⃣']]);
+        const row2 = super.createMessageActionRowButton([['4', '4️⃣'], ['5', '5️⃣'], ['6', '6️⃣']]);
+        const row3 = super.createMessageActionRowButton([['7', '7️⃣'], ['8', '8️⃣'], ['9', '9️⃣']]);
+
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#ab0e0e')
                 .setTitle('Tic-Tac-Toe')
                 .setDescription(this.message)
@@ -69,39 +60,47 @@ export default class TicTacToeGame extends GameBase {
                 .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: [row1, row2, row3]
         };
     }
 
     protected getGameOverContent(result: GameResult): GameContent {
 
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#ab0e0e')
                 .setTitle('Tic-Tac-Toe')
                 .setDescription('GAME OVER! ' + this.getWinnerText(result))
                 .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
-                .setTimestamp()]
+                .setTimestamp()],
+            components: []
         };
     }
 
-    public onReaction(reaction: MessageReaction): void {
-        const reactName = reaction.emoji.name;
-        if (!reactName) {
-            this.step();
+    public onReaction(reaction: DiscordMessageReactionAdd): void { }
+
+    public onInteraction(interaction: DiscordInteraction): void {
+        const customId = interaction.data?.custom_id;
+        if (!customId) {
+            this.step(false);
+            interaction.update(this.getContent());
             return;
         }
 
-        let index = reactions.get(reactName);
-        if (index === undefined)
+        let index = parseInt(customId);
+        if (index === undefined) {
+            interaction.update(this.getContent());
             return;
+        }
 
         index -= 1;
         const x = index % 3;
         const y = Math.floor(index / 3);
         if (gameBoard[x][y] !== 0) {
-            this.step();
+            this.step(false);
+            interaction.update(this.getContent());
             return;
         }
 
@@ -121,16 +120,15 @@ export default class TicTacToeGame extends GameBase {
             //Flip the turn back to the last player to place a piece
             this.player1Turn = !this.player1Turn;
             if (this.hasWon(PLAYER_2) || this.hasWon(PLAYER_1))
-                this.gameOver({ result: ResultType.WINNER, name: this.getTurn(), score: this.getGameboardStr() });
+                this.gameOver({ result: ResultType.WINNER, name: this.getTurn(), score: this.getGameboardStr() }, interaction);
             else
-                this.gameOver({ result: ResultType.TIE, score: this.getGameboardStr() });
+                this.gameOver({ result: ResultType.TIE, score: this.getGameboardStr() }, interaction);
         }
         else {
-            this.step();
+            this.step(false);
+            interaction.update(this.getContent());
         }
     }
-
-    public onInteraction(interaction: Interaction): void { }
 
     private getTurn(): string {
         return this.player1Turn ? this.gameStarter.username : (this.player2 ? this.player2?.username : 'CPU');

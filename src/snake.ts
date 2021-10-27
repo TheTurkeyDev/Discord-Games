@@ -1,8 +1,9 @@
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordMessageButton } from 'discord-minimal';
 import GameBase from './game-base';
-import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import Position from './position';
 import GameResult, { ResultType } from './game-result';
 import { GameContent } from './game-content';
+import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
 
 const WIDTH = 15;
 const HEIGHT = 10;
@@ -15,15 +16,13 @@ export default class SnakeGame extends GameBase {
     private score: number;
 
     constructor() {
-        super('snake', false, true);
+        super('snake', false);
         this.snake.push({ x: 5, y: 5 });
         this.snakeLength = 1;
         this.score = 0;
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
+        for (let y = 0; y < HEIGHT; y++)
+            for (let x = 0; x < WIDTH; x++)
                 this.gameBoard[y * WIDTH + x] = '🟦';
-            }
-        }
     }
 
     protected getGameboard(): string {
@@ -73,36 +72,40 @@ export default class SnakeGame extends GameBase {
         this.apple.y = newApplePos.y;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
         this.score = 0;
         this.snakeLength = 1;
         this.snake = [{ x: 5, y: 5 }];
         this.newAppleLoc();
-        super.newGame(msg, player2, onGameEnd, ['⬅️', '⬆️', '⬇️', '➡️']);
+        super.newGame(msg, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
+        const row = super.createMessageActionRowButton([['left', '⬅️'], ['up', '⬆️'], ['right', '➡️'], ['down', '⬇️']]);
+
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#03ad03')
                 .setTitle('Snake Game')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
                 .setDescription(this.getGameboard())
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: [row]
         };
     }
 
     protected getGameOverContent(result: GameResult): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#03ad03')
                 .setTitle('Snake Game')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
                 .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameboard()}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: []
         };
     }
 
@@ -112,55 +115,60 @@ export default class SnakeGame extends GameBase {
             this.snakeLength++;
             this.newAppleLoc();
         }
-        super.step();
+        super.step(false);
     }
 
-    public onReaction(reaction: MessageReaction): void {
+    public onReaction(reaction: DiscordMessageReactionAdd): void { }
+
+    public onInteraction(interaction: DiscordInteraction): void {
         const snakeHead = this.snake[0];
         const nextPos = { x: snakeHead.x, y: snakeHead.y };
-        if (reaction.emoji.name === '⬅️') {
-            const nextX = snakeHead.x - 1;
-            if (nextX < 0) {
-                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
-                return;
-            }
-            nextPos.x = nextX;
-        }
-        else if (reaction.emoji.name === '⬆️') {
-            const nextY = snakeHead.y - 1;
-            if (nextY < 0) {
-                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
-                return;
-            }
-            nextPos.y = nextY;
-        }
-        else if (reaction.emoji.name === '⬇️') {
-            const nextY = snakeHead.y + 1;
-            if (nextY >= HEIGHT) {
-                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
-                return;
-            }
-            nextPos.y = nextY;
-        }
-        else if (reaction.emoji.name === '➡️') {
-            const nextX = snakeHead.x + 1;
-            if (nextX >= WIDTH) {
-                this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
-                return;
-            }
-            nextPos.x = nextX;
+        let nextX;
+        let nextY;
+        switch (interaction.data?.custom_id) {
+            case 'left':
+                nextX = snakeHead.x - 1;
+                if (nextX < 0) {
+                    this.gameOver({ result: ResultType.LOSER, score: this.score.toString() }, interaction);
+                    return;
+                }
+                nextPos.x = nextX;
+                break;
+            case 'up':
+                nextY = snakeHead.y - 1;
+                if (nextY < 0) {
+                    this.gameOver({ result: ResultType.LOSER, score: this.score.toString() }, interaction);
+                    return;
+                }
+                nextPos.y = nextY;
+                break;
+            case 'down':
+                nextY = snakeHead.y + 1;
+                if (nextY >= HEIGHT) {
+                    this.gameOver({ result: ResultType.LOSER, score: this.score.toString() }, interaction);
+                    return;
+                }
+                nextPos.y = nextY;
+                break;
+            case 'right':
+                nextX = snakeHead.x + 1;
+                if (nextX >= WIDTH) {
+                    this.gameOver({ result: ResultType.LOSER, score: this.score.toString() }, interaction);
+                    return;
+                }
+                nextPos.x = nextX;
+                break;
         }
 
         if (this.isLocInSnake(nextPos)) {
-            this.gameOver({ result: ResultType.LOSER, score: this.score.toString() });
+            this.gameOver({ result: ResultType.LOSER, score: this.score.toString() }, interaction);
         }
         else {
             this.snake.unshift(nextPos);
             if (this.snake.length > this.snakeLength)
                 this.snake.pop();
             this.step();
+            interaction.update(this.getContent());
         }
     }
-
-    public onInteraction(interaction: Interaction): void { }
 }

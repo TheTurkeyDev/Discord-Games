@@ -1,4 +1,6 @@
-import { Collection, DiscordAPIError, Interaction, Message, MessageReaction, User, MessageEditOptions } from 'discord.js';
+import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser } from 'discord-minimal';
+import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
+
 import { GameContent } from './game-content';
 import GameResult, { ResultType } from './game-result';
 
@@ -6,54 +8,47 @@ export default abstract class GameBase {
     protected gameId!: number;
     protected gameType: string;
     protected isMultiplayerGame: boolean;
-    protected usesReactions: boolean;
     protected inGame = false;
     protected result: GameResult | undefined = undefined;
-    protected gameMessage: Message | undefined = undefined;
-    public gameStarter!: User;
-    public player2: User | null = null;
+    protected gameMessage: DiscordMessage | undefined = undefined;
+    public gameStarter!: DiscordUser;
+    public player2: DiscordUser | null = null;
     public player1Turn = true;
     protected onGameEnd: (result: GameResult) => void = () => { };
 
-    public reactions: string[] = [];
     protected gameTimeoutId: NodeJS.Timeout | undefined;
 
     protected abstract getContent(): GameContent;
     protected abstract getGameOverContent(result: GameResult): GameContent;
-    public abstract onReaction(reaction: MessageReaction): void;
-    public abstract onInteraction(interaction: Interaction): void;
+    public abstract onReaction(reaction: DiscordMessageReactionAdd): void;
+    public abstract onInteraction(interaction: DiscordInteraction): void;
 
-    constructor(gameType: string, isMultiplayerGame: boolean, usesReactions: boolean) {
+    constructor(gameType: string, isMultiplayerGame: boolean) {
         this.gameType = gameType;
         this.isMultiplayerGame = isMultiplayerGame;
-        this.usesReactions = usesReactions;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void, reactions: string[], showReactions = true): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         this.gameStarter = msg.author;
         this.player2 = player2;
         this.onGameEnd = onGameEnd;
         this.inGame = true;
-        this.reactions = reactions;
 
         const content = this.getContent();
-        msg.channel.send({ embeds: content.embeds, components: content.components }).then(emsg => {
+        msg.sendInChannel({ embeds: content.embeds, components: content.components }).then(emsg => {
             this.gameMessage = emsg;
-            if (this.usesReactions) {
-                if (showReactions)
-                    reactions.forEach(reaction => emsg.react(reaction));
-            }
             this.gameTimeoutId = setTimeout(() => this.gameOver({ result: ResultType.TIMEOUT }), 60000);
         }).catch(e => this.handleError(e, 'send message/ embed'));
     }
 
-    protected step(): void {
-        if (this.gameMessage?.deleted) {
-            this.gameOver({ result: ResultType.DELETED });
-            return;
-        }
+    protected step(edit = false): void {
+        // TODO:
+        // if (this.gameMessage?.deleted) {
+        //     this.gameOver({ result: ResultType.DELETED });
+        //     return;
+        // }
 
-        if (this.usesReactions)
+        if (edit)
             this.gameMessage?.edit(this.getContent());
 
         if (this.gameTimeoutId)
@@ -73,7 +68,7 @@ export default abstract class GameBase {
                     break;
                 case 50001:
                     if (this.gameMessage)
-                        this.gameMessage.channel.send('The bot is missing access to preform some of it\'s actions!').catch(() => {
+                        this.gameMessage.sendMessageInChannel('The bot is missing access to preform some of it\'s actions!').catch(() => {
                             console.log('Error in the access error handler!');
                         });
                     else
@@ -83,7 +78,7 @@ export default abstract class GameBase {
                     break;
                 case 50013:
                     if (this.gameMessage)
-                        this.gameMessage.channel.send(`The bot is missing the '${perm}' permissions it needs order to work!`).catch(() => {
+                        this.gameMessage.sendMessageInChannel(`The bot is missing the '${perm}' permissions it needs order to work!`).catch(() => {
                             console.log('Error in the permission error handler!');
                         });
                     else
@@ -102,36 +97,29 @@ export default abstract class GameBase {
         }
     }
 
-    public gameOver(result: GameResult): void {
+    public gameOver(result: GameResult, interaction: DiscordInteraction | undefined = undefined): void {
         if (!this.inGame)
             return;
 
         this.result = result;
         this.inGame = false;
 
+        const gameOverContent = this.getGameOverContent(result);
+
         if (result.result !== ResultType.FORCE_END) {
             this.onGameEnd(result);
-            if (this.usesReactions) {
-                try {
-                    this.gameMessage?.edit(this.getGameOverContent(result)).catch(e => this.handleError(e, ''));
-                } catch (e) {
-                    //This is needed because apparently the above catch doesn't catch when the message doesn't have a channel?
-                    console.log(e);
-                }
-
-                this.gameMessage?.reactions.removeAll();
-            }
+            this.gameMessage?.edit(gameOverContent).catch(e => this.handleError(e, ''));
+            this.gameMessage?.removeAllReactions();
         }
         else {
-            try {
-                this.gameMessage?.edit(this.getGameOverContent(result)).catch(e => this.handleError(e, ''));
-            } catch (e) {
-                //This is needed because apparently the above catch doesn't catch when the message doesn't have a channel?
-                console.log(e);
-            }
-            if (this.gameTimeoutId)
-                clearTimeout(this.gameTimeoutId);
+            if (interaction)
+                interaction.update(gameOverContent);
+            else
+                this.gameMessage?.edit(gameOverContent).catch(e => this.handleError(e, ''));
         }
+
+        if (this.gameTimeoutId)
+            clearTimeout(this.gameTimeoutId);
     }
 
     protected getWinnerText(result: GameResult): string {
@@ -168,5 +156,15 @@ export default abstract class GameBase {
 
     public doesSupportMultiplayer(): boolean {
         return this.isMultiplayerGame;
+    }
+
+    public createMessageActionRowButton(buttonInfo: string[][]): DiscordMessageActionRow {
+        return new DiscordMessageActionRow()
+            .addComponents(
+                buttonInfo.map(([id, label]) => new DiscordMessageButton()
+                    .setCustomId(id)
+                    .setLabel(label)
+                    .setStyle(DiscordButtonStyle.Secondary))
+            );
     }
 }

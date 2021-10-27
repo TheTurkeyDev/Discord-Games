@@ -1,4 +1,4 @@
-import Discord, { Client, Intents, Interaction, Options, Snowflake, TextChannel, User } from 'discord.js';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -12,15 +12,7 @@ import GameResult, { ResultType } from './game-result';
 import FloodGame from './flood';
 import TwentyFortyEightGame from './2048';
 
-const client = new Client({
-    makeCache: Options.cacheWithLimits({
-        MessageManager: 30,
-        PresenceManager: 0,
-        UserManager: 0,
-        ReactionManager: 0,
-    }),
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS]
-});
+const client = new DiscordMinimal([INTENTS.GUILD_MESSAGES, INTENTS.GUILD_MESSAGE_REACTIONS]);
 
 const minesweeper = new MinesweeperGame();
 
@@ -38,37 +30,37 @@ const commandGameMap: CommandObject = {
     '!2048': () => new TwentyFortyEightGame(),
 };
 
-const playerGameMap = new Map<string, Map<string, GameBase>>();
+const playerGameMap = new Map<Snowflake, Map<Snowflake, GameBase>>();
 
-client.on('ready', () => {
-    client.user?.setActivity('!gbhelp');
-    console.log(`Logged in as ${client.user?.tag}!`);
+client.on('ready', (ready: DiscordReady) => {
+    ready.user.setActivity('!gbhelp');
+    console.log(`Logged in as ${ready.user?.username}!`);
 });
 
-client.on('messageCreate', msg => {
+client.on('messageCreate', (msg: DiscordMessage) => {
     const msgParts = msg.content.toLowerCase().split(' ');
     const command = msgParts[0];
-    if (msg.guild === undefined)
+    if (msg.guild_id === undefined)
         return;
 
-    const guildId = msg.guild?.id;
+    const guildId: Snowflake = msg.guild_id;
     const userId = msg.author.id;
-    if (msg.channel instanceof TextChannel && msg.channel.name && !!guildId) {
+    if (guildId) {
         if (Object.keys(commandGameMap).includes(command)) {
             const game = commandGameMap[command]();
 
-            let player2: User | undefined;
-            if (msg.mentions.members != null && msg.mentions.members?.size > 0) {
+            let player2: DiscordUser | undefined;
+            if (msg.mentions != null && msg.mentions.length > 0) {
                 if (!game.doesSupportMultiplayer()) {
                     msg.reply('Sorry that game is not a multiplayer game!');
                     return;
                 }
                 else
-                    player2 = msg.mentions.members.first()?.user;
+                    player2 = msg.mentions[0];
             }
 
             if (!playerGameMap.has(guildId))
-                playerGameMap.set(guildId, new Map<string, GameBase>());
+                playerGameMap.set(guildId, new Map<Snowflake, GameBase>());
 
             const foundGame = Array.from(playerGameMap.get(guildId)?.values() ?? []).find(g => g.getGameId() === game.getGameId());
             if (foundGame !== undefined && foundGame.isInGame()) {
@@ -87,7 +79,7 @@ client.on('messageCreate', msg => {
                     playerGameMap.get(guildId)?.delete(userId);
                     if (player2)
                         playerGameMap.get(guildId)?.delete(player2.id);
-                }, []);
+                });
                 playerGameMap.get(guildId)?.set(userId, game);
                 if (player2)
                     playerGameMap.get(guildId)?.set(player2.id, game);
@@ -109,47 +101,42 @@ client.on('messageCreate', msg => {
             }
         }
         else if (command === '!gbhelp') {
-            const embed = new Discord.MessageEmbed()
+            const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Help - Commands')
                 .setDescription('!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess\n!tictactoe - Play TicTacToe\n!flood - Play Flood\n!2048 - Play 2048')
                 .setTimestamp();
-            msg.channel.send({ embeds: [embed] }).catch(e => console.log('Failed to send help message'));
+            msg.sendInChannel({ embeds: [embed] }).catch(e => console.log(e));
         }
     }
 });
 
-client.on('interactionCreate', interaction => {
-    const userGame = getPlayersGame(interaction.guildId, interaction.user);
+client.on('interactionCreate', (interaction: DiscordInteraction) => {
+    const userGame = getPlayersGame(interaction.guild_id as Snowflake, interaction.member?.user?.id as Snowflake);
     if (!userGame)
         return;
 
     userGame.onInteraction(interaction);
 });
 
-client.on('messageReactionAdd', (reaction, user) => {
-    if (reaction.partial || user.partial)
-        return;
-
-    const userGame = getPlayersGame(reaction.message.guild?.id ?? null, user);
+client.on('messageReactionAdd', (reaction: DiscordMessageReactionAdd) => {
+    const userId = reaction.user_id;
+    const userGame = getPlayersGame(reaction.guild_id ?? null, userId);
     if (!userGame)
         return;
 
-    const reactName = reaction.emoji.name;
-    if (!reactName || !userGame.reactions.includes(reactName))
+    if (userGame.player1Turn && userId !== userGame.gameStarter.id)
         return;
-    if (userGame.player1Turn && user.id !== userGame.gameStarter.id)
+    if (!userGame.player1Turn && userGame.player2 !== null && userId !== userGame.player2.id)
         return;
-    if (!userGame.player1Turn && userGame.player2 !== null && user.id !== userGame.player2.id)
-        return;
-    if (!userGame.player1Turn && userGame.player2 === null && user.id !== userGame.gameStarter.id)
+    if (!userGame.player1Turn && userGame.player2 === null && userId !== userGame.gameStarter.id)
         return;
 
     userGame.onReaction(reaction);
-    reaction.users.remove(user);
+    reaction.remove();
 });
 
-const getPlayersGame = (guildId: Snowflake | null, user: User): GameBase | null => {
+const getPlayersGame = (guildId: Snowflake | null, userId: Snowflake): GameBase | null => {
     if (!guildId)
         return null;
 
@@ -157,7 +144,7 @@ const getPlayersGame = (guildId: Snowflake | null, user: User): GameBase | null 
     if (!guidGames)
         return null;
 
-    const userGame = guidGames.get(user.id);
+    const userGame = guidGames.get(userId);
     if (!userGame)
         return null;
 

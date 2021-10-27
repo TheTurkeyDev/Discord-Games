@@ -1,6 +1,6 @@
-import { MessageActionRow, MessageEmbed } from 'discord.js';
+import { DiscordEmbed, DiscordMessageActionRow } from 'discord-minimal';
 
 export interface GameContent {
-    embeds?: MessageEmbed[];
-    components?: MessageActionRow[];
+    embeds?: DiscordEmbed[];
+    components?: DiscordMessageActionRow[];
 }

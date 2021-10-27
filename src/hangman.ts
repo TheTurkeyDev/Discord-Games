@@ -1,8 +1,8 @@
 import GameBase from './game-base';
-import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import fetch from 'node-fetch';
 import { GameContent } from './game-content';
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction } from 'discord-minimal';
 
 //unicode fun...
 const reactions = new Map([
@@ -51,10 +51,10 @@ export default class HangmanGame extends GameBase {
     private wrongs = 0;
 
     constructor() {
-        super('hangman', false, true);
+        super('hangman', false);
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -63,13 +63,13 @@ export default class HangmanGame extends GameBase {
             this.guesssed = [];
             this.wrongs = 0;
 
-            super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()), false);
+            super.newGame(msg, player2, onGameEnd);
         });
     }
 
     protected getContent(): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#db9a00')
                 .setTitle('Hangman')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
@@ -83,7 +83,7 @@ export default class HangmanGame extends GameBase {
 
     protected getGameOverContent(result: GameResult): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#db9a00')
                 .setTitle('Hangman')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
@@ -116,7 +116,7 @@ export default class HangmanGame extends GameBase {
             }
         }
 
-        this.step();
+        this.step(true);
     }
 
     private getDescription(): string {
@@ -136,13 +136,13 @@ export default class HangmanGame extends GameBase {
             + '```';
     }
 
-    public onReaction(reaction: MessageReaction): void {
+    public onReaction(reaction: DiscordMessageReactionAdd): void {
         const reactName = reaction.emoji.name;
         if (reactName)
             this.makeGuess(reactName);
         else
-            this.step();
+            this.step(true);
     }
 
-    public onInteraction(interaction: Interaction): void { }
+    public onInteraction(interaction: DiscordInteraction): void { }
 }

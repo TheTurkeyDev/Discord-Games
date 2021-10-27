@@ -1,7 +1,8 @@
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordMessageButton } from 'discord-minimal';
 import GameBase from './game-base';
-import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import { GameContent } from './game-content';
+import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
 
 const WIDTH = 9;
 const HEIGHT = 8;
@@ -14,7 +15,7 @@ export default class MinesweeperGame extends GameBase {
     private bombLocs: boolean[] = [];
 
     constructor() {
-        super('minesweeper', false, true);
+        super('minesweeper', false);
     }
 
     private gameBoardToString(links = true): string {
@@ -36,7 +37,7 @@ export default class MinesweeperGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -60,12 +61,13 @@ export default class MinesweeperGame extends GameBase {
         }
 
         this.flagging = false;
-        super.newGame(msg, player2, onGameEnd, ['👆', '🚩']);
+        super.newGame(msg, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
+        const row = super.createMessageActionRowButton([['uncover', '👆'], ['flag', '🚩']]);
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#c7c7c7')
                 .setTitle('Minesweeper')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
@@ -73,22 +75,24 @@ export default class MinesweeperGame extends GameBase {
                 .addField(this.flagging ? 'Flagging' : 'Clicking', this.flagging ? '🚩' : '👆', false)
                 .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: [row]
         };
     }
 
     protected getGameOverContent(result: GameResult): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#c7c7c7')
                 .setTitle('Minesweeper')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
                 .setDescription(`**GAME OVER!**\n${this.getWinnerText(result)}\n\n${this.gameBoardToString(false)}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: []
         };
     }
 
-    protected step(): void {
+    protected step(edit: boolean): void {
         let lose = false;
         let win = true;
         for (let y = 0; y < HEIGHT; y++) {
@@ -110,29 +114,31 @@ export default class MinesweeperGame extends GameBase {
             this.showBombs();
             this.gameOver({ result: ResultType.LOSER, name: this.gameStarter.username, score: '' });
         }
-        else
-            super.step();
+        else {
+            super.step(edit);
+        }
     }
 
-    public onReaction(reaction: MessageReaction): void {
-        if (reaction.emoji.name === '👆') {
-            this.flagging = false;
-        }
-        else if (reaction.emoji.name === '🚩') {
-            this.flagging = true;
+    public onReaction(reaction: DiscordMessageReactionAdd): void { }
+    public onInteraction(interaction: DiscordInteraction): void {
+        switch (interaction.data?.custom_id) {
+            case 'uncover':
+                this.flagging = false;
+                break;
+            case 'flag':
+                this.flagging = true;
+                break;
         }
 
-        this.step();
+        this.step(false);
+        interaction.update(this.getContent());
     }
-    public onInteraction(interaction: Interaction): void { }
 
     private showBombs(): void {
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
+        for (let y = 0; y < HEIGHT; y++)
+            for (let x = 0; x < WIDTH; x++)
                 if (this.bombLocs[y * WIDTH + x])
                     this.gameBoard[y * WIDTH + x] = '💣';
-            }
-        }
     }
 
     private uncover(col: number, row: number) {
@@ -197,14 +203,12 @@ export default class MinesweeperGame extends GameBase {
     public makeMove(col: number, row: number): void {
         const index = row * WIDTH + col;
         if (this.gameBoard[index] === '⬜') {
-            if (this.flagging) {
+            if (this.flagging)
                 this.gameBoard[index] = '🚩';
-            }
-            else {
+            else
                 this.uncover(col, row);
-            }
 
-            this.step();
+            this.step(true);
         }
         else if (this.gameBoard[index] === '🚩' && this.flagging) {
             this.gameBoard[index] = '⬜';

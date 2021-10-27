@@ -1,4 +1,5 @@
-import { Interaction, MessageActionRow, MessageButton, MessageEmbed, MessageReaction } from 'discord.js';
+import { DiscordMessageActionRow, DiscordMessageButton, DiscordEmbed, DiscordButtonStyle, DiscordInteraction, DiscordMessageReactionAdd } from 'discord-minimal';
+
 import { Direction, oppositeDir } from './direction';
 import GameBase from './game-base';
 import { GameContent } from './game-content';
@@ -14,7 +15,7 @@ export default class TwentyFortyEightGame extends GameBase {
     score: number;
 
     constructor() {
-        super('2048', false, false);
+        super('2048', false);
         this.gameBoard = [];
         this.mergedPos = [];
         for (let y = 0; y < HEIGHT; y++)
@@ -25,27 +26,9 @@ export default class TwentyFortyEightGame extends GameBase {
     }
 
     protected getContent(): GameContent {
-        const row = new MessageActionRow()
-            .addComponents(
-                [new MessageButton()
-                    .setCustomId('left')
-                    .setLabel('⬅️')
-                    .setStyle('SECONDARY'),
-                new MessageButton()
-                    .setCustomId('up')
-                    .setLabel('⬆️')
-                    .setStyle('SECONDARY'),
-                new MessageButton()
-                    .setCustomId('right')
-                    .setLabel('➡️')
-                    .setStyle('SECONDARY'),
-                new MessageButton()
-                    .setCustomId('down')
-                    .setLabel('⬇️')
-                    .setStyle('SECONDARY')]
-            );
+        const row = super.createMessageActionRowButton([['left', '⬅️'], ['up', '⬆️'], ['right', '➡️'], ['down', '⬇️']]);
 
-        const embed = new MessageEmbed()
+        const embed = new DiscordEmbed()
             .setColor('#f2e641')
             .setTitle('2048')
             .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
@@ -62,7 +45,7 @@ export default class TwentyFortyEightGame extends GameBase {
 
     protected getGameOverContent(result: GameResult): GameContent {
         return {
-            embeds: [new MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#f2e641')
                 .setTitle('2048')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
@@ -172,13 +155,13 @@ export default class TwentyFortyEightGame extends GameBase {
         return numMoves;
     }
 
-    public onInteraction(interaction: Interaction): void {
+    public onInteraction(interaction: DiscordInteraction): void {
         if (!interaction.isButton())
             return;
 
         let moved = false;
         this.mergedPos = [];
-        switch (interaction.customId) {
+        switch (interaction.data?.custom_id) {
             case 'left':
                 moved = this.shiftLeft();
                 break;
@@ -196,18 +179,14 @@ export default class TwentyFortyEightGame extends GameBase {
         if (moved)
             this.placeRandomNewTile();
 
-        super.step();
+        super.step(false);
 
-        if (this.isBoardFull() && this.numMovesPossible() == 0) {
-            const result = { result: ResultType.LOSER, name: this.gameStarter.username, score: `${this.score}` };
-            interaction.update(this.getGameOverContent(result));
-            this.gameOver(result);
-        }
-        else {
+        if (this.isBoardFull() && this.numMovesPossible() == 0)
+            this.gameOver({ result: ResultType.LOSER, name: this.gameStarter.username, score: `${this.score}` }, interaction);
+        else
             interaction.update(this.getContent());
-        }
 
 
     }
-    public onReaction(reaction: MessageReaction): void { }
+    public onReaction(reaction: DiscordMessageReactionAdd): void { }
 }

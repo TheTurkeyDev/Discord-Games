@@ -1,9 +1,10 @@
 import GameBase from './game-base';
-import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
 import { GameContent } from './game-content';
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction } from 'discord-minimal';
 
+//TODO: Switch to drop downs
 const reactions = new Map([
     ['1️⃣', 0],
     ['2️⃣', 1],
@@ -35,7 +36,7 @@ export default class ChessGame extends GameBase {
     private message = '\u200b';
 
     constructor() {
-        super('chess', true, true);
+        super('chess', true);
     }
 
     private getGameDesc(): string {
@@ -50,7 +51,7 @@ export default class ChessGame extends GameBase {
             + '- There is no castling and you must actually take the king to win!\n';
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
 
@@ -68,12 +69,12 @@ export default class ChessGame extends GameBase {
         this.selecting = true;
         this.message = '\u200b';
 
-        super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
+        super.newGame(msg, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#d6b881')
                 .setTitle('Chess')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
@@ -89,7 +90,7 @@ export default class ChessGame extends GameBase {
 
     protected getGameOverContent(result: GameResult): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#d6b881')
                 .setTitle('Chess')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
@@ -122,10 +123,10 @@ export default class ChessGame extends GameBase {
         }
     }
 
-    public onReaction(reaction: MessageReaction): void {
+    public onReaction(reaction: DiscordMessageReactionAdd): void {
         const reactName = reaction.emoji.name;
         if (!reactName) {
-            this.step();
+            this.step(true);
             return;
         }
         const index = reactions.get(reactName);
@@ -197,9 +198,9 @@ export default class ChessGame extends GameBase {
                 }
             }
         }
-        this.step();
+        this.step(true);
     }
-    public onInteraction(interaction: Interaction): void { }
+    public onInteraction(interaction: DiscordInteraction): void { }
 
     private canPieceMoveTo(piece: number, selectedMove: Move): MoveCheck {
         const blackPiece = piece < 10;

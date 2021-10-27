@@ -1,26 +1,17 @@
 import GameResult, { ResultType } from './game-result';
-import Discord, { Interaction, Message, MessageReaction, User } from 'discord.js';
 import GameBase from './game-base';
 import { GameContent } from './game-content';
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageActionRow, DiscordMessageButton } from 'discord-minimal';
+import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
 
 const WIDTH = 7;
 const HEIGHT = 7;
-
-const reactions = new Map([
-    ['1️⃣', 1],
-    ['2️⃣', 2],
-    ['3️⃣', 3],
-    ['4️⃣', 4],
-    ['5️⃣', 5],
-    ['6️⃣', 6],
-    ['7️⃣', 7]
-]);
 
 export default class Connect4Game extends GameBase {
     private gameBoard: string[];
 
     constructor() {
-        super('connect4', true, true);
+        super('connect4', true);
         this.gameBoard = [];
     }
 
@@ -30,62 +21,68 @@ export default class Connect4Game extends GameBase {
             str += 'Note there is no AI for this game, so you are just playing against yourself';
         str += '\n| . 1 | . 2 | 3 | . 4 | . 5 | 6 | . 7 |\n';
         for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
+            for (let x = 0; x < WIDTH; x++)
                 str += '|' + this.gameBoard[y * WIDTH + x];
-            }
             str += '|\n';
         }
         return str;
     }
 
-    public newGame(msg: Message, player2: User | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
 
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
+        for (let y = 0; y < HEIGHT; y++)
+            for (let x = 0; x < WIDTH; x++)
                 this.gameBoard[y * WIDTH + x] = '⚪';
-            }
-        }
-        super.newGame(msg, player2, onGameEnd, Array.from(reactions.keys()));
+
+        super.newGame(msg, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
+        const row1 = super.createMessageActionRowButton([['1', '1️⃣'], ['2', '2️⃣'], ['3', '3️⃣'], ['4', '4️⃣']]);
+        const row2 = super.createMessageActionRowButton([['5', '5️⃣'], ['6', '6️⃣'], ['7', '7️⃣']]);
+
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#000b9e')
                 .setTitle('Connect-4')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=Sl1ZnvlNalI')
                 .setDescription(this.gameBoardToString())
                 .addField('Turn:', this.getUserDisplay())
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: [row1, row2]
         };
     }
 
     protected getGameOverContent(result: GameResult): GameContent {
         return {
-            embeds: [new Discord.MessageEmbed()
+            embeds: [new DiscordEmbed()
                 .setColor('#000b9e')
                 .setTitle('Connect-4')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=Sl1ZnvlNalI')
                 .setDescription(`**GAME OVER! ${this.getWinnerText(result)}**\n\n${this.gameBoardToString()}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: []
         };
     }
 
     protected step(): void {
         this.player1Turn = !this.player1Turn;
-        super.step();
+        super.step(false);
     }
 
-    public onReaction(reaction: MessageReaction): void {
-        const reactName = reaction.emoji.name;
-        if (!reactName) {
+    public onReaction(reaction: DiscordMessageReactionAdd): void { }
+    public onInteraction(interaction: DiscordInteraction): void {
+        const customId = interaction.data?.custom_id;
+        if (!customId) {
             this.step();
             return;
         }
-        let column = reactions.get(reactName);
+
+        let column = parseInt(customId);
+
         if (column === undefined)
             return;
 
@@ -104,16 +101,16 @@ export default class Connect4Game extends GameBase {
         }
 
         if (this.hasWon(placedX, placedY)) {
-            this.gameOver({ result: ResultType.WINNER, name: this.getUserDisplay(), score: this.getScore() });
+            this.gameOver({ result: ResultType.WINNER, name: this.getUserDisplay(), score: this.getScore() }, interaction);
         }
         else if (this.isBoardFull()) {
-            this.gameOver({ result: ResultType.TIE, score: this.getScore() });
+            this.gameOver({ result: ResultType.TIE, score: this.getScore() }, interaction);
         }
         else {
             this.step();
+            interaction.update(this.getContent());
         }
     }
-    public onInteraction(interaction: Interaction): void { }
 
     private getScore(): string {
         let str = '';
