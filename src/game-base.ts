@@ -1,4 +1,4 @@
-import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser } from 'discord-minimal';
+import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser, Snowflake } from 'discord-minimal';
 import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
 
 import { GameContent } from './game-content';
@@ -42,12 +42,6 @@ export default abstract class GameBase {
     }
 
     protected step(edit = false): void {
-        // TODO:
-        // if (this.gameMessage?.deleted) {
-        //     this.gameOver({ result: ResultType.DELETED });
-        //     return;
-        // }
-
         if (edit)
             this.gameMessage?.edit(this.getContent());
 
@@ -148,6 +142,10 @@ export default abstract class GameBase {
 
     public getGameType(): string {
         return this.gameType;
+    }
+
+    public getMessageId(): Snowflake {
+        return this.gameMessage?.id;
     }
 
     public isInGame(): boolean {

@@ -1,4 +1,4 @@
-import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction } from 'discord-minimal';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -135,6 +135,28 @@ client.on('messageReactionAdd', (reaction: DiscordMessageReactionAdd) => {
     userGame.onReaction(reaction);
     reaction.remove();
 });
+
+client.on('messageDelete', (message: DiscordMessageDelete) => {
+    handleMessageDelete(message.guild_id, message.id);
+});
+
+client.on('messageDeleteBulk', (messages: DiscordMessageDeleteBulk) => {
+    messages.ids.forEach((id: Snowflake) => handleMessageDelete(messages.guild_id, id));
+});
+
+const handleMessageDelete = (guild_id: Snowflake, message_id: Snowflake) => {
+    if (!guild_id)
+        return;
+
+    const guidGames = playerGameMap.get(guild_id);
+    if (!guidGames)
+        return;
+
+    guidGames.forEach((userId: Snowflake, game: GameBase) => {
+        if (game.getMessageId() === message_id)
+            game.gameOver({ result: ResultType.DELETED });
+    });
+};
 
 const getPlayersGame = (guildId: Snowflake | null, userId: Snowflake): GameBase | null => {
     if (!guildId)
