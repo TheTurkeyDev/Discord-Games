@@ -144,7 +144,7 @@ client.on('messageDeleteBulk', (messages: DiscordMessageDeleteBulk) => {
     messages.ids.forEach((id: Snowflake) => handleMessageDelete(messages.guild_id, id));
 });
 
-const handleMessageDelete = (guild_id: Snowflake, message_id: Snowflake) => {
+const handleMessageDelete = (guild_id: Snowflake | undefined, message_id: Snowflake) => {
     if (!guild_id)
         return;
 
@@ -152,7 +152,7 @@ const handleMessageDelete = (guild_id: Snowflake, message_id: Snowflake) => {
     if (!guidGames)
         return;
 
-    guidGames.forEach((userId: Snowflake, game: GameBase) => {
+    guidGames.forEach((game: GameBase, userId: Snowflake) => {
         if (game.getMessageId() === message_id)
             game.gameOver({ result: ResultType.DELETED });
     });

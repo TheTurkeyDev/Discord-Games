@@ -145,7 +145,7 @@ export default abstract class GameBase {
     }
 
     public getMessageId(): Snowflake {
-        return this.gameMessage?.id;
+        return this.gameMessage?.id ?? -1;
     }
 
     public isInGame(): boolean {
