@@ -1,5 +1,4 @@
-import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser, Snowflake } from 'discord-minimal';
-import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
+import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser, Snowflake, DiscordButtonStyle } from 'discord-minimal';
 
 import { GameContent } from './game-content';
 import GameResult, { ResultType } from './game-result';

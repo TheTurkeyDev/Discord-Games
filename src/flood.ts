@@ -82,7 +82,9 @@ export default class FloodGame extends GameBase {
             const queue: Position[] = [{ x: 0, y: 0 }];
             const visited: Position[] = [];
 
-            while (queue.length > 0) {
+            let depth = 0;
+            while (queue.length > 0 && depth < (WIDTH * HEIGHT * 5)) {
+                depth++;
                 const pos: Position | undefined = queue.shift();
                 if (!pos || visited.includes(pos))
                     continue;
@@ -96,6 +98,12 @@ export default class FloodGame extends GameBase {
                             queue.push(checkPos);
                     });
                 }
+            }
+
+
+            if (depth > (WIDTH * HEIGHT * 4)) {
+                //TODO figure out why this happens
+                console.log('MAX Depth Reached! vLen:' + visited.length + ' qLen:' + queue.length);
             }
 
             let gameOver = true;

@@ -1,8 +1,7 @@
 import GameResult, { ResultType } from './game-result';
 import GameBase from './game-base';
 import { GameContent } from './game-content';
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageActionRow, DiscordMessageButton } from 'discord-minimal';
-import { DiscordButtonStyle } from 'discord-minimal/output/custom-types/discord-button-styles';
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle } from 'discord-minimal';
 
 const WIDTH = 7;
 const HEIGHT = 7;

@@ -1,4 +1,4 @@
-import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk } from 'discord-minimal';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordGuild, PERMISSIONS } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -12,7 +12,7 @@ import GameResult, { ResultType } from './game-result';
 import FloodGame from './flood';
 import TwentyFortyEightGame from './2048';
 
-const client = new DiscordMinimal([INTENTS.GUILD_MESSAGES, INTENTS.GUILD_MESSAGE_REACTIONS]);
+const client = new DiscordMinimal([INTENTS.GUILDS, INTENTS.GUILD_MESSAGES, INTENTS.GUILD_MESSAGE_REACTIONS]);
 
 const minesweeper = new MinesweeperGame();
 
@@ -32,12 +32,19 @@ const commandGameMap: CommandObject = {
 
 const playerGameMap = new Map<Snowflake, Map<Snowflake, GameBase>>();
 
+let botId = -1;
+
 client.on('ready', (ready: DiscordReady) => {
     ready.user.setActivity('!gbhelp');
+    botId = ready.user.id;
     console.log(`Logged in as ${ready.user?.username}!`);
 });
 
 client.on('messageCreate', (msg: DiscordMessage) => {
+    // Ignore the bot
+    if (msg.author.id === botId)
+        return;
+
     const msgParts = msg.content.toLowerCase().split(' ');
     const command = msgParts[0];
     if (msg.guild_id === undefined)
