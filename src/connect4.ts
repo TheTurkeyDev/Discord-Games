@@ -107,7 +107,7 @@ export default class Connect4Game extends GameBase {
         }
         else {
             this.step();
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
         }
     }
 

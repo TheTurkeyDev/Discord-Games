@@ -4,8 +4,6 @@ import GameResult, { ResultType } from './game-result';
 import Position from './position';
 import { GameContent } from './game-content';
 
-const gameBoard = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-
 const NO_MOVE = 0;
 const PLAYER_1 = 1;
 const PLAYER_2 = 2;
@@ -18,6 +16,8 @@ export default class TicTacToeGame extends GameBase {
     private computersMove: Position = { x: 0, y: 0 };
     private winningPoints: Position = { x: -1, y: -1 };
 
+    private gameBoard = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+
     constructor() {
         super('tictactoe', true);
     }
@@ -26,7 +26,7 @@ export default class TicTacToeGame extends GameBase {
         let str = '';
         for (let y = 0; y < 3; y++) {
             for (let x = 0; x < 3; x++) {
-                str += gameBoard[x][y];
+                str += this.gameBoard[x][y];
             }
         }
         return str;
@@ -38,7 +38,7 @@ export default class TicTacToeGame extends GameBase {
 
         for (let y = 0; y < 3; y++)
             for (let x = 0; x < 3; x++)
-                gameBoard[x][y] = NO_MOVE;
+                this.gameBoard[x][y] = NO_MOVE;
 
         this.winningPoints = { x: -1, y: -1 };
 
@@ -84,22 +84,23 @@ export default class TicTacToeGame extends GameBase {
         const customId = interaction.data?.custom_id;
         if (!customId) {
             this.step(false);
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
             return;
         }
 
         let index = parseInt(customId);
-        if (index === undefined) {
-            interaction.update(this.getContent());
+        if (index === undefined || index <= 0 || Number.isNaN(index)) {
+            console.log('Error with index! ' + customId + ' -> ' + index);
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
             return;
         }
 
         index -= 1;
         const x = index % 3;
         const y = Math.floor(index / 3);
-        if (gameBoard[x][y] !== 0) {
+        if (this.gameBoard[x][y] !== 0) {
             this.step(false);
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
             return;
         }
 
@@ -125,7 +126,7 @@ export default class TicTacToeGame extends GameBase {
         }
         else {
             this.step(false);
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
         }
     }
 
@@ -145,21 +146,21 @@ export default class TicTacToeGame extends GameBase {
     }
 
     private hasWon(player: number): boolean {
-        if (gameBoard[0][0] == gameBoard[1][1] && gameBoard[0][0] == gameBoard[2][2] && gameBoard[0][0] == player) {
+        if (this.gameBoard[0][0] == this.gameBoard[1][1] && this.gameBoard[0][0] == this.gameBoard[2][2] && this.gameBoard[0][0] == player) {
             this.winningPoints = { x: 0, y: 8 };
             return true;
         }
-        if (gameBoard[0][2] == gameBoard[1][1] && gameBoard[0][2] == gameBoard[2][0] && gameBoard[0][2] == player) {
+        if (this.gameBoard[0][2] == this.gameBoard[1][1] && this.gameBoard[0][2] == this.gameBoard[2][0] && this.gameBoard[0][2] == player) {
             this.winningPoints = { x: 6, y: 2 };
             return true;
         }
         for (let i = 0; i < 3; ++i) {
-            if (gameBoard[i][0] == gameBoard[i][1] && gameBoard[i][0] == gameBoard[i][2] && gameBoard[i][0] == player) {
+            if (this.gameBoard[i][0] == this.gameBoard[i][1] && this.gameBoard[i][0] == this.gameBoard[i][2] && this.gameBoard[i][0] == player) {
                 this.winningPoints = { x: i, y: i + 6 };
                 return true;
             }
 
-            if (gameBoard[0][i] == gameBoard[1][i] && gameBoard[0][i] == gameBoard[2][i] && gameBoard[0][i] == player) {
+            if (this.gameBoard[0][i] == this.gameBoard[1][i] && this.gameBoard[0][i] == this.gameBoard[2][i] && this.gameBoard[0][i] == player) {
                 this.winningPoints = { x: i * 3, y: (i * 3) + 2 };
                 return true;
             }
@@ -171,13 +172,13 @@ export default class TicTacToeGame extends GameBase {
         const availablePoints: Position[] = [];
         for (let i = 0; i < 3; ++i)
             for (let j = 0; j < 3; ++j)
-                if (gameBoard[i][j] == NO_MOVE)
+                if (this.gameBoard[i][j] == NO_MOVE)
                     availablePoints.push({ x: i, y: j });
         return availablePoints;
     }
 
     private placeMove(x: number, y: number, player: number): void {
-        gameBoard[x][y] = player;
+        this.gameBoard[x][y] = player;
     }
 
     private minimax(depth: number, turn: number): number {
@@ -210,7 +211,7 @@ export default class TicTacToeGame extends GameBase {
                     this.computersMove = point;
 
                 if (currentScore == 1) {
-                    gameBoard[point.x][point.y] = 0;
+                    this.gameBoard[point.x][point.y] = 0;
                     break;
                 }
 
@@ -222,11 +223,11 @@ export default class TicTacToeGame extends GameBase {
                 const currentScore = this.minimax(depth + 1, PLAYER_2);
                 min = Math.min(currentScore, min);
                 if (min == -1) {
-                    gameBoard[point.x][point.y] = 0;
+                    this.gameBoard[point.x][point.y] = 0;
                     break;
                 }
             }
-            gameBoard[point.x][point.y] = 0;
+            this.gameBoard[point.x][point.y] = 0;
         }
         return turn == PLAYER_2 ? max : min;
     }

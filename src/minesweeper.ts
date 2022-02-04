@@ -130,7 +130,7 @@ export default class MinesweeperGame extends GameBase {
         }
 
         this.step(false);
-        interaction.update(this.getContent());
+        interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
     }
 
     private showBombs(): void {

@@ -59,6 +59,9 @@ export default abstract class GameBase {
                 case 10008:
                     this.gameOver({ result: ResultType.DELETED, error: 'Message was deleted!' });
                     break;
+                case 10062:
+                    console.log('Unkown Interaction??');
+                    break;
                 case 50001:
                     if (this.gameMessage)
                         this.gameMessage.sendMessageInChannel('The bot is missing access to preform some of it\'s actions!').catch(() => {
@@ -106,7 +109,7 @@ export default abstract class GameBase {
         }
         else {
             if (interaction)
-                interaction.update(gameOverContent);
+                interaction.update(gameOverContent).catch(e => this.handleError(e, 'update interaction'));
             else
                 this.gameMessage?.edit(gameOverContent).catch(e => this.handleError(e, ''));
         }
@@ -161,7 +164,7 @@ export default abstract class GameBase {
                 buttonInfo.map(([id, label]) => new DiscordMessageButton()
                     .setCustomId(id)
                     .setLabel(label)
-                    .setStyle(DiscordButtonStyle.Secondary))
+                    .setStyle(DiscordButtonStyle.SECONDARY))
             );
     }
 }

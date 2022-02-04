@@ -56,7 +56,7 @@ export default class TwentyFortyEightGame extends GameBase {
         };
     }
 
-    private placeRandomNewTile = () => {
+    private placeRandomNewTile() {
         let newPos = { x: 0, y: 0 };
         do {
             newPos = { x: Math.floor(Math.random() * WIDTH), y: Math.floor(Math.random() * HEIGHT) };
@@ -65,7 +65,7 @@ export default class TwentyFortyEightGame extends GameBase {
         this.gameBoard[newPos.y * WIDTH + newPos.x] = (Math.random() * 100) < 25 ? 2 : 1;
     }
 
-    private shiftLeft = (): boolean => {
+    private shiftLeft(): boolean {
         let moved = false;
         for (let y = 0; y < HEIGHT; y++)
             for (let x = 1; x < WIDTH; x++)
@@ -73,7 +73,7 @@ export default class TwentyFortyEightGame extends GameBase {
         return moved;
     }
 
-    private shiftRight = (): boolean => {
+    private shiftRight(): boolean {
         let moved = false;
         for (let y = 0; y < HEIGHT; y++)
             for (let x = WIDTH - 2; x >= 0; x--)
@@ -81,7 +81,7 @@ export default class TwentyFortyEightGame extends GameBase {
         return moved;
     }
 
-    private shiftUp = (): boolean => {
+    private shiftUp(): boolean {
         let moved = false;
         for (let x = 0; x < WIDTH; x++)
             for (let y = 1; y < HEIGHT; y++)
@@ -89,7 +89,7 @@ export default class TwentyFortyEightGame extends GameBase {
         return moved;
     }
 
-    private shiftDown = (): boolean => {
+    private shiftDown(): boolean {
         let moved = false;
         for (let x = 0; x < WIDTH; x++)
             for (let y = HEIGHT - 2; y >= 0; y--)
@@ -97,7 +97,7 @@ export default class TwentyFortyEightGame extends GameBase {
         return moved;
     }
 
-    private shift = (pos: Position, dir: Direction): boolean => {
+    private shift(pos: Position, dir: Direction): boolean {
         let moved = false;
         const movingNum = this.gameBoard[pos.y * WIDTH + pos.x];
         if (movingNum === 0)
@@ -131,7 +131,7 @@ export default class TwentyFortyEightGame extends GameBase {
     }
 
 
-    private isBoardFull = () => {
+    private isBoardFull(): boolean {
         for (let y = 0; y < HEIGHT; y++)
             for (let x = 0; x < WIDTH; x++)
                 if (this.gameBoard[y * WIDTH + x] === 0)
@@ -139,7 +139,7 @@ export default class TwentyFortyEightGame extends GameBase {
         return true;
     }
 
-    private numMovesPossible = () => {
+    private numMovesPossible(): number {
         let numMoves = 0;
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
@@ -184,7 +184,7 @@ export default class TwentyFortyEightGame extends GameBase {
         if (this.isBoardFull() && this.numMovesPossible() == 0)
             this.gameOver({ result: ResultType.LOSER, name: this.gameStarter.username, score: `${this.score}` }, interaction);
         else
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
 
 
     }

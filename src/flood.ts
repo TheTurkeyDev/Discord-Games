@@ -39,7 +39,7 @@ export default class FloodGame extends GameBase {
                 Object.entries(SQUARES).map(([k, v]) => new DiscordMessageButton()
                     .setCustomId(k)
                     .setLabel(v)
-                    .setStyle(DiscordButtonStyle.Secondary))
+                    .setStyle(DiscordButtonStyle.SECONDARY))
             );
 
         const embed = new DiscordEmbed()
@@ -75,18 +75,16 @@ export default class FloodGame extends GameBase {
             return;
 
         const selected = Object.entries(SQUARES).find(([k, v]) => k === interaction.data?.custom_id);
+        const current = this.gameBoard[0];
 
-        if (selected) {
+        if (selected && selected[1] !== current) {
             this.turn += 1;
-            const current = this.gameBoard[0];
             const queue: Position[] = [{ x: 0, y: 0 }];
             const visited: Position[] = [];
 
-            let depth = 0;
-            while (queue.length > 0 && depth < (WIDTH * HEIGHT * 5)) {
-                depth++;
+            while (queue.length > 0) {
                 const pos: Position | undefined = queue.shift();
-                if (!pos || visited.includes(pos))
+                if (!pos || visited.some(p => p.x === pos.x && p.y === pos.y))
                     continue;
 
                 visited.push(pos);
@@ -94,16 +92,10 @@ export default class FloodGame extends GameBase {
                     this.gameBoard[pos.y * WIDTH + pos.x] = selected[1];
 
                     [up(pos), down(pos), left(pos), right(pos)].forEach(checkPos => {
-                        if (!visited.includes(checkPos) && isInside(checkPos, WIDTH, HEIGHT))
+                        if (!visited.some(p => p.x === checkPos.x && p.y === checkPos.y) && isInside(checkPos, WIDTH, HEIGHT))
                             queue.push(checkPos);
                     });
                 }
-            }
-
-
-            if (depth > (WIDTH * HEIGHT * 4)) {
-                //TODO figure out why this happens
-                console.log('MAX Depth Reached! vLen:' + visited.length + ' qLen:' + queue.length);
             }
 
             let gameOver = true;
@@ -119,7 +111,7 @@ export default class FloodGame extends GameBase {
         }
 
         if (this.isInGame())
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
         else if (!this.result)
             this.gameOver({ result: ResultType.ERROR }, interaction);
     }

@@ -167,7 +167,7 @@ export default class SnakeGame extends GameBase {
             if (this.snake.length > this.snakeLength)
                 this.snake.pop();
             this.step();
-            interaction.update(this.getContent());
+            interaction.update(this.getContent()).catch(e => super.handleError(e, 'update interaction'));
         }
     }
 }
