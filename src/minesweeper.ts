@@ -36,7 +36,7 @@ export default class MinesweeperGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -60,7 +60,7 @@ export default class MinesweeperGame extends GameBase {
         }
 
         this.flagging = false;
-        super.newGame(msg, player2, onGameEnd);
+        super.newGame(interaction, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {

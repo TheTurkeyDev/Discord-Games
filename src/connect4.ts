@@ -16,7 +16,7 @@ export default class Connect4Game extends GameBase {
 
     private gameBoardToString(): string {
         let str = '';
-        if (!this.player2 == null)
+        if (!this.player2)
             str += 'Note there is no AI for this game, so you are just playing against yourself';
         str += '\n| . 1 | . 2 | 3 | . 4 | . 5 | 6 | . 7 |\n';
         for (let y = 0; y < HEIGHT; y++) {
@@ -27,7 +27,7 @@ export default class Connect4Game extends GameBase {
         return str;
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
 
@@ -35,7 +35,7 @@ export default class Connect4Game extends GameBase {
             for (let x = 0; x < WIDTH; x++)
                 this.gameBoard[y * WIDTH + x] = '⚪';
 
-        super.newGame(msg, player2, onGameEnd);
+        super.newGame(interaction, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
@@ -128,7 +128,7 @@ export default class Connect4Game extends GameBase {
     }
 
     private getUserDisplay(): string {
-        if (this.isMultiplayerGame && this.player2 !== null)
+        if (this.isMultiplayerGame && this.player2)
             return this.player1Turn ? '🔴 ' + this.gameStarter.username : '🟡 ' + this.player2?.username ?? 'ERR';
         return this.getChipFromTurn();
     }

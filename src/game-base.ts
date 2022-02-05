@@ -27,15 +27,18 @@ export default abstract class GameBase {
         this.isMultiplayerGame = isMultiplayerGame;
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
-        this.gameStarter = msg.author;
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.gameStarter = interaction.user ?? interaction.member!.user!;
         this.player2 = player2;
         this.onGameEnd = onGameEnd;
         this.inGame = true;
 
+        interaction.respond({ content: 'Game started. Happy Playing!' });
+
         const content = this.getContent();
-        msg.sendInChannel({ embeds: content.embeds, components: content.components }).then(emsg => {
-            this.gameMessage = emsg;
+        interaction.sendMessageInChannel({ embeds: content.embeds, components: content.components }).then(msg => {
+            this.gameMessage = msg;
             this.gameTimeoutId = setTimeout(() => this.gameOver({ result: ResultType.TIMEOUT }), 60000);
         }).catch(e => this.handleError(e, 'send message/ embed'));
     }

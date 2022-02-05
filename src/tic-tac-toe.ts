@@ -32,7 +32,7 @@ export default class TicTacToeGame extends GameBase {
         return str;
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -42,7 +42,7 @@ export default class TicTacToeGame extends GameBase {
 
         this.winningPoints = { x: -1, y: -1 };
 
-        super.newGame(msg, player2, onGameEnd);
+        super.newGame(interaction, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
@@ -107,7 +107,7 @@ export default class TicTacToeGame extends GameBase {
         this.placeMove(x, y, this.player1Turn ? PLAYER_1 : PLAYER_2);
         this.player1Turn = !this.player1Turn;
 
-        if (!this.isGameOver() && this.player2 == null && !this.player1Turn) {
+        if (!this.isGameOver() && !this.player2 && !this.player1Turn) {
             //Make CPU Move
             this.minimax(0, PLAYER_2);
             const cpuIndex = (this.computersMove.y * 3) + this.computersMove.x + 1;

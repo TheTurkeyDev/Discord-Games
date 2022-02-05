@@ -54,7 +54,7 @@ export default class HangmanGame extends GameBase {
         super('hangman', false);
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (this.inGame)
             return;
 
@@ -63,7 +63,7 @@ export default class HangmanGame extends GameBase {
             this.guesssed = [];
             this.wrongs = 0;
 
-            super.newGame(msg, player2, onGameEnd);
+            super.newGame(interaction, player2, onGameEnd);
         });
     }
 

@@ -51,7 +51,7 @@ export default class ChessGame extends GameBase {
             + '- There is no castling and you must actually take the king to win!\n';
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
 
@@ -69,7 +69,7 @@ export default class ChessGame extends GameBase {
         this.selecting = true;
         this.message = '\u200b';
 
-        super.newGame(msg, player2, onGameEnd);
+        super.newGame(interaction, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {

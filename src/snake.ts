@@ -71,14 +71,14 @@ export default class SnakeGame extends GameBase {
         this.apple.y = newApplePos.y;
     }
 
-    public newGame(msg: DiscordMessage, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
+    public newGame(interaction: DiscordInteraction, player2: DiscordUser | null, onGameEnd: (result: GameResult) => void): void {
         if (super.isInGame())
             return;
         this.score = 0;
         this.snakeLength = 1;
         this.snake = [{ x: 5, y: 5 }];
         this.newAppleLoc();
-        super.newGame(msg, player2, onGameEnd);
+        super.newGame(interaction, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {

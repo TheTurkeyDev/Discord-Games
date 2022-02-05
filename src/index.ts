@@ -1,4 +1,4 @@
-import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordGuild, PERMISSIONS } from 'discord-minimal';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordGuild, PERMISSIONS, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -11,6 +11,7 @@ import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import FloodGame from './flood';
 import TwentyFortyEightGame from './2048';
+import { DiscordApplicationCommandType } from 'discord-minimal/output/src/custom-types/discord-application-command-type';
 
 const client = new DiscordMinimal([INTENTS.GUILDS, INTENTS.GUILD_MESSAGES, INTENTS.GUILD_MESSAGE_REACTIONS]);
 
@@ -20,14 +21,14 @@ type CommandObject = {
     [key: string]: () => GameBase;
 }
 const commandGameMap: CommandObject = {
-    '!snake': () => new SnakeGame(),
-    '!hangman': () => new HangmanGame(),
-    '!connect4': () => new Connect4Game(),
-    '!minesweeper': () => minesweeper,
-    '!chess': () => new ChessGame(),
-    '!tictactoe': () => new TicTacToeGame(),
-    '!flood': () => new FloodGame(),
-    '!2048': () => new TwentyFortyEightGame(),
+    'snake': () => new SnakeGame(),
+    'hangman': () => new HangmanGame(),
+    'connect4': () => new Connect4Game(),
+    'minesweeper': () => minesweeper,
+    'chess': () => new ChessGame(),
+    'tictactoe': () => new TicTacToeGame(),
+    'flood': () => new FloodGame(),
+    '2048': () => new TwentyFortyEightGame(),
 };
 
 const playerGameMap = new Map<Snowflake, Map<Snowflake, GameBase>>();
@@ -38,88 +39,126 @@ client.on('ready', (ready: DiscordReady) => {
     ready.user.setActivity('!gbhelp');
     botId = ready.user.id;
     console.log(`Logged in as ${ready.user?.username}!`);
+
+    initCommands(ready.application.id);
 });
 
-client.on('messageCreate', (msg: DiscordMessage) => {
-    // Ignore the bot
-    if (msg.author.id === botId)
-        return;
+function initCommands(appId: Snowflake) {
+    const vsSubCommand = new DiscordApplicationCommandOption('vs', 'User you wish to play against', DiscordApplicationCommandOptionType.USER);
 
-    const msgParts = msg.content.toLowerCase().split(' ');
-    const command = msgParts[0];
-    if (msg.guild_id === undefined)
-        return;
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'gamesbot', 'GamesBot help and info'));
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'listgames', 'List available games'));
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'endgame', 'End the game you are currently playing'));
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'snake', 'Play Snake'));
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'hangman', 'Play Hangman'));
+    const connect4Command = new DiscordApplicationCommand(appId, 'connect4', 'Play Connect4');
+    connect4Command.addOption(vsSubCommand);
+    client.createGlobalCommand(connect4Command);
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'minesweeper', 'Play Minesweeper'));
+    const ticTacToeCommand = new DiscordApplicationCommand(appId, 'tictactoe', 'Play Tic-Tac-Toe');
+    ticTacToeCommand.addOption(vsSubCommand);
+    client.createGlobalCommand(ticTacToeCommand);
+    // const chessCommand = new DiscordApplicationCommand(appId, 'chess', 'Play Chess');
+    // chessCommand.addOption(vsSubCommand);
+    // client.createGlobalCommand(chessCommand);
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'flood', 'Play Flood'));
+    client.createGlobalCommand(new DiscordApplicationCommand(appId, '2048', 'Play 2048'));
+}
 
-    const guildId: Snowflake = msg.guild_id;
-    const userId = msg.author.id;
-    if (guildId) {
+client.on('interactionCreate', (interaction: DiscordInteraction) => {
+    const userGame = getPlayersGame(interaction.guild_id as Snowflake, interaction.member?.user?.id as Snowflake);
+
+    if (interaction.isAppCommand()) {
+        if (!interaction.guild_id) {
+            interaction.respond({ content: 'This command can only be run inside a guild!' });
+            return;
+        }
+
+        const guildId: Snowflake = interaction.guild_id;
+        const userId = interaction.member?.user?.id ?? interaction.user?.id;
+        const command = interaction.data?.name;
+        if (!command || !userId) {
+            interaction.respond({ content: 'The command or user was missing somehow.... awkward...' });
+            return;
+        }
         if (Object.keys(commandGameMap).includes(command)) {
             const game = commandGameMap[command]();
 
+            const player2Option = interaction.data?.options.find(o => o.name === 'vs');
             let player2: DiscordUser | undefined;
-            if (msg.mentions != null && msg.mentions.length > 0) {
+            if (player2Option) {
                 if (!game.doesSupportMultiplayer()) {
-                    msg.reply('Sorry that game is not a multiplayer game!');
+                    interaction.respond({ content: 'Sorry that game is not a multiplayer game!' });
                     return;
                 }
-                else
-                    player2 = msg.mentions[0];
+                else {
+                    const users = interaction.data?.resolved?.users;
+                    const player2Id = player2Option.value as Snowflake;
+                    player2 = player2Id && users ? users[player2Id] : undefined;
+                }
             }
 
             if (!playerGameMap.has(guildId))
                 playerGameMap.set(guildId, new Map<Snowflake, GameBase>());
 
-            const foundGame = Array.from(playerGameMap.get(guildId)?.values() ?? []).find(g => g.getGameId() === game.getGameId());
-            if (foundGame !== undefined && foundGame.isInGame()) {
-                msg.reply('Sorry, there can only be 1 instance of a game at a time!');
+            if (userGame) {
+                interaction.respond({ content: 'You must either finish or end your current game (!end) before you can play another!' });
+                return;
+            }
+            else if (player2 && playerGameMap.get(guildId)?.has(player2.id)) {
+                interaction.respond({ content: 'The person you are trying to play against is already in a game!' });
                 return;
             }
 
-            if (playerGameMap.get(guildId)?.has(userId)) {
-                msg.reply('You must either finish or end your current game (!end) before you can play another!');
+            const foundGame = Array.from(playerGameMap.get(guildId)?.values() ?? []).find(g => g.getGameId() === game.getGameId());
+            if (foundGame !== undefined && foundGame.isInGame()) {
+                interaction.respond({ content: 'Sorry, there can only be 1 instance of a game at a time!' });
+                return;
             }
-            else if (player2 && playerGameMap.get(guildId)?.has(player2.id)) {
-                msg.reply('The person you are trying to play against is already in a game!');
-            }
-            else {
-                game.newGame(msg, player2 ?? null, (result: GameResult) => {
-                    playerGameMap.get(guildId)?.delete(userId);
-                    if (player2)
-                        playerGameMap.get(guildId)?.delete(player2.id);
-                });
-                playerGameMap.get(guildId)?.set(userId, game);
+
+            game.newGame(interaction, player2 ?? null, (result: GameResult) => {
+                playerGameMap.get(guildId)?.delete(userId);
                 if (player2)
-                    playerGameMap.get(guildId)?.set(player2.id, game);
-            }
+                    playerGameMap.get(guildId)?.delete(player2.id);
+            });
+            playerGameMap.get(guildId)?.set(userId, game);
+            if (player2)
+                playerGameMap.get(guildId)?.set(player2.id, game);
         }
-        else if (command === '!end' || command === '!stop') {
+        else if (command === 'endgame') {
             const playerGame = playerGameMap.get(guildId);
             if (!!playerGame && playerGame.has(userId)) {
                 const game = playerGame.get(userId);
                 if (game) {
                     game.gameOver({ result: ResultType.FORCE_END });
-                    playerGame.delete(game.gameStarter.id);
                     if (game?.player2)
                         playerGame.delete(game.player2.id);
                 }
-                else {
-                    playerGame.delete(userId);
-                }
+                playerGame.delete(userId);
+                interaction.respond({ content: 'Your game was ended!' }).catch(e => console.log(e));
+                return;
             }
+            interaction.respond({ content: 'Sorry! You must be in a game first!' }).catch(e => console.log(e));
+            return;
         }
-        else if (command === '!gbhelp') {
+        else if (command === 'listgames') {
             const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
-                .setTitle('Help - Commands')
-                .setDescription('!snake - Play Snake\n!hangman - Play Hangman\n!connect4 - Play Connect4\n!minesweeper - Play Minesweeper\n!chess - Play Chess\n!tictactoe - Play TicTacToe\n!flood - Play Flood\n!2048 - Play 2048')
+                .setTitle('Avilable Games')
+                .setDescription('Snake\nHangman\nConnect4\nMinesweeper\nChess\nTic-Tac-Toe\nFlood\n2048')
                 .setTimestamp();
-            msg.sendInChannel({ embeds: [embed] }).catch(e => console.log(e));
+            interaction.respond({ embeds: [embed] }).catch(e => console.log(e));
+        }
+        else if (command === 'gamesbot') {
+            const embed = new DiscordEmbed()
+                .setColor('#fc2eff')
+                .setTitle('Games Bot')
+                .setDescription('Welcome to GamesBot!\nTODO put more here')
+                .setTimestamp();
+            interaction.respond({ embeds: [embed] }).catch(e => console.log(e));
         }
     }
-});
 
-client.on('interactionCreate', (interaction: DiscordInteraction) => {
-    const userGame = getPlayersGame(interaction.guild_id as Snowflake, interaction.member?.user?.id as Snowflake);
     if (!userGame)
         return;
 
@@ -134,9 +173,9 @@ client.on('messageReactionAdd', (reaction: DiscordMessageReactionAdd) => {
 
     if (userGame.player1Turn && userId !== userGame.gameStarter.id)
         return;
-    if (!userGame.player1Turn && userGame.player2 !== null && userId !== userGame.player2.id)
+    if (!userGame.player1Turn && !!userGame.player2?.id && userId !== userGame.player2.id)
         return;
-    if (!userGame.player1Turn && userGame.player2 === null && userId !== userGame.gameStarter.id)
+    if (!userGame.player1Turn && !userGame.player2?.id && userId !== userGame.gameStarter.id)
         return;
 
     userGame.onReaction(reaction);
