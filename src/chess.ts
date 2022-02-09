@@ -2,37 +2,14 @@ import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
 import { GameContent } from './game-content';
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction } from 'discord-minimal';
-
-//TODO: Switch to drop downs
-const reactions = new Map([
-    ['1️⃣', 0],
-    ['2️⃣', 1],
-    ['3️⃣', 2],
-    ['4️⃣', 3],
-    ['5️⃣', 4],
-    ['6️⃣', 5],
-    ['7️⃣', 6],
-    ['8️⃣', 7],
-    ['🇦', 10],
-    ['🇧', 11],
-    ['🇨', 12],
-    ['🇩', 13],
-    ['🇪', 14],
-    ['🇫', 15],
-    ['🇬', 16],
-    ['🇭', 17],
-    ['✔️', 20],
-    ['🔙', 21]
-]);
+import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageActionRow, DiscordSelectMenu, DiscordSelectOption, DiscordMessageButton, DiscordButtonStyle } from 'discord-minimal';
 
 export default class ChessGame extends GameBase {
 
     private gameBoard: number[] = [];
     private aiMoveStack: Move[] = [];
 
-    private selectedMove: Move = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
-    private selecting = true;
+    private selectedMove: Move = { fx: 0, fy: 0, tx: 0, ty: 0, replaced: -1 };
     private message = '\u200b';
 
     constructor() {
@@ -65,14 +42,75 @@ export default class ChessGame extends GameBase {
             12, 13, 14, 15, 16, 14, 13, 12];
 
         this.player1Turn = true;
-        this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
-        this.selecting = true;
+        this.selectedMove = { fx: 0, fy: 0, tx: 0, ty: 0, replaced: -1 };
         this.message = '\u200b';
 
         super.newGame(interaction, player2, onGameEnd);
     }
 
     protected getContent(): GameContent {
+        const row1 = new DiscordMessageActionRow().addComponents(
+            new DiscordSelectMenu()
+                .setCustomId('from_letter')
+                .addOptions(
+                    new DiscordSelectOption('From A', '0').setDefault(this.selectedMove.fx === 0),
+                    new DiscordSelectOption('From B', '1').setDefault(this.selectedMove.fx === 1),
+                    new DiscordSelectOption('From C', '2').setDefault(this.selectedMove.fx === 2),
+                    new DiscordSelectOption('From D', '3').setDefault(this.selectedMove.fx === 3),
+                    new DiscordSelectOption('From E', '4').setDefault(this.selectedMove.fx === 4),
+                    new DiscordSelectOption('From F', '5').setDefault(this.selectedMove.fx === 5),
+                    new DiscordSelectOption('From G', '6').setDefault(this.selectedMove.fx === 6),
+                    new DiscordSelectOption('From H', '7').setDefault(this.selectedMove.fx === 7)
+                )
+        );
+        const row2 = new DiscordMessageActionRow().addComponents(
+            new DiscordSelectMenu()
+                .setCustomId('from_number')
+                .addOptions(
+                    new DiscordSelectOption('From 1', '0').setDefault(this.selectedMove.fy === 0),
+                    new DiscordSelectOption('From 2', '1').setDefault(this.selectedMove.fy === 1),
+                    new DiscordSelectOption('From 3', '2').setDefault(this.selectedMove.fy === 2),
+                    new DiscordSelectOption('From 4', '3').setDefault(this.selectedMove.fy === 3),
+                    new DiscordSelectOption('From 5', '4').setDefault(this.selectedMove.fy === 4),
+                    new DiscordSelectOption('From 6', '5').setDefault(this.selectedMove.fy === 5),
+                    new DiscordSelectOption('From 7', '6').setDefault(this.selectedMove.fy === 6),
+                    new DiscordSelectOption('From 8', '7').setDefault(this.selectedMove.fy === 7)
+                )
+        );
+        const row3 = new DiscordMessageActionRow().addComponents(
+            new DiscordSelectMenu()
+                .setCustomId('to_letter')
+                .addOptions(
+                    new DiscordSelectOption('To A', '0').setDefault(this.selectedMove.tx === 0),
+                    new DiscordSelectOption('To B', '1').setDefault(this.selectedMove.tx === 1),
+                    new DiscordSelectOption('To C', '2').setDefault(this.selectedMove.tx === 2),
+                    new DiscordSelectOption('To D', '3').setDefault(this.selectedMove.tx === 3),
+                    new DiscordSelectOption('To E', '4').setDefault(this.selectedMove.tx === 4),
+                    new DiscordSelectOption('To F', '5').setDefault(this.selectedMove.tx === 5),
+                    new DiscordSelectOption('To G', '6').setDefault(this.selectedMove.tx === 6),
+                    new DiscordSelectOption('To H', '7').setDefault(this.selectedMove.tx === 7)
+                )
+        );
+        const row4 = new DiscordMessageActionRow().addComponents(
+            new DiscordSelectMenu()
+                .setCustomId('to_number')
+                .addOptions(
+                    new DiscordSelectOption('To 1', '0').setDefault(this.selectedMove.ty === 0),
+                    new DiscordSelectOption('To 2', '1').setDefault(this.selectedMove.ty === 1),
+                    new DiscordSelectOption('To 3', '2').setDefault(this.selectedMove.ty === 2),
+                    new DiscordSelectOption('To 4', '3').setDefault(this.selectedMove.ty === 3),
+                    new DiscordSelectOption('To 5', '4').setDefault(this.selectedMove.ty === 4),
+                    new DiscordSelectOption('To 6', '5').setDefault(this.selectedMove.ty === 5),
+                    new DiscordSelectOption('To 7', '6').setDefault(this.selectedMove.ty === 6),
+                    new DiscordSelectOption('To 8', '7').setDefault(this.selectedMove.ty === 7)
+                )
+        );
+        const row5 = new DiscordMessageActionRow().addComponents(
+            new DiscordMessageButton()
+                .setCustomId('confirm')
+                .setLabel('Confirm')
+                .setStyle(DiscordButtonStyle.SECONDARY)
+        );
         return {
             embeds: [new DiscordEmbed()
                 .setColor('#d6b881')
@@ -80,11 +118,11 @@ export default class ChessGame extends GameBase {
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
                 .setDescription(this.getGameDesc())
                 .addField('Turn:', this.getDisplayForTurn())
-                .addField('State:', this.selecting ? 'Selecting Piece' : 'Moving Piece')
                 .addField('Message:', this.message)
                 .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(',')}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: [row1, row2, row3, row4, row5]
         };
     }
 
@@ -96,7 +134,8 @@ export default class ChessGame extends GameBase {
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=yMg9tVZBSPw')
                 .setDescription('GAME OVER! ' + this.getWinnerText(result))
                 .setImage(`https://api.theturkey.dev/discordgames/genchessboard?gb=${this.gameBoard.join(',')}&s1=${this.selectedMove.fx},${this.selectedMove.fy}&s2=${this.selectedMove.tx},${this.selectedMove.ty}`)
-                .setTimestamp()]
+                .setTimestamp()],
+            components: []
         };
     }
 
@@ -123,84 +162,57 @@ export default class ChessGame extends GameBase {
         }
     }
 
-    public onReaction(reaction: DiscordMessageReactionAdd): void {
-        const reactName = reaction.emoji.name;
-        if (!reactName) {
-            this.step(true);
-            return;
-        }
-        const index = reactions.get(reactName);
-        if (index === undefined)
-            return;
+    public onReaction(reaction: DiscordMessageReactionAdd): void { }
 
-        let progress = false;
-        this.message = '-';
+    public onInteraction(interaction: DiscordInteraction): void {
+        const id = interaction.data?.custom_id;
+        const val = interaction.isButton() ? '' : interaction.data?.values[0] as string;
 
-        if (index == 20) {
-            progress = true;
-        }
-        else if (index == 21 && !this.selecting) {
-            this.selecting = true;
-            this.selectedMove.tx = -1;
-            this.selectedMove.ty = -1;
-        }
-        else if (index >= 10) {
-            if (this.selecting)
-                this.selectedMove.fx = index % 10;
-            else
-                this.selectedMove.tx = index % 10;
-        }
-        else {
-            if (this.selecting)
-                this.selectedMove.fy = index;
-            else
-                this.selectedMove.ty = index;
-        }
-
-        const currX = this.selecting ? this.selectedMove.fx : this.selectedMove.tx;
-        const currY = this.selecting ? this.selectedMove.fy : this.selectedMove.ty;
-
-        if (progress && currY != -1 && currX != -1) {
-            const index = (this.selectedMove.fy * 8) + this.selectedMove.fx;
-            if (this.selecting) {
-                const piece = this.gameBoard[index];
-                if (piece >= 10 && this.player1Turn) {
+        switch (id) {
+            case 'confirm':
+                // eslint-disable-next-line no-case-declarations
+                const fromIndex = (this.selectedMove.fy * 8) + this.selectedMove.fx;
+                // eslint-disable-next-line no-case-declarations
+                const fromPiece = this.gameBoard[fromIndex];
+                // eslint-disable-next-line no-case-declarations
+                const toIndex = (this.selectedMove.ty * 8) + this.selectedMove.tx;
+                if ((fromPiece >= 10 && this.player1Turn) || (fromPiece > 0 && fromPiece < 10 && !this.player1Turn)) {
                     this.message = '\u200b';
-                    this.selecting = false;
-                    this.selectedMove.tx = this.selectedMove.fx;
-                    this.selectedMove.ty = this.selectedMove.fy;
+                    const moveInfo = this.canPieceMoveTo(fromPiece, this.selectedMove);
+                    if (moveInfo.valid) {
+                        this.gameBoard[fromIndex] = 0;
+                        this.gameBoard[toIndex] = fromPiece;
+                        this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
+                        this.endTurn();
+                    }
+                    else {
+                        this.message = moveInfo.msg;
+                    }
                 }
-                else if (piece > 0 && piece < 10 && !this.player1Turn) {
-                    this.message = '\u200b';
-                    this.selecting = false;
-                    this.selectedMove.tx = this.selectedMove.fx;
-                    this.selectedMove.ty = this.selectedMove.fy;
-                }
-                else if (piece == 0) {
+                else if (fromPiece == 0) {
                     this.message = 'There is no piece at that location!';
                 }
                 else {
                     this.message = 'You cannot move that piece!';
                 }
-            }
-            else {
-                const piece = this.gameBoard[index];
-                const moveInfo = this.canPieceMoveTo(piece, this.selectedMove);
-                if (moveInfo.valid) {
-                    this.gameBoard[index] = 0;
-                    this.gameBoard[(this.selectedMove.ty * 8) + this.selectedMove.tx] = piece;
-                    this.selectedMove = { fx: -1, fy: -1, tx: -1, ty: -1, replaced: -1 };
-                    this.selecting = true;
-                    this.endTurn();
-                }
-                else {
-                    this.message = moveInfo.msg;
-                }
-            }
+                break;
+            case 'from_letter':
+                this.selectedMove.fx = parseInt(val);
+                break;
+            case 'from_number':
+                this.selectedMove.fy = parseInt(val);
+                break;
+            case 'to_letter':
+                this.selectedMove.tx = parseInt(val);
+                break;
+            case 'to_number':
+                this.selectedMove.ty = parseInt(val);
+                break;
         }
-        this.step(true);
+
+        this.step(false);
+        interaction.update(this.inGame ? this.getContent() : this.getGameOverContent(this.result)).catch(e => super.handleError(e, 'update interaction'));
     }
-    public onInteraction(interaction: DiscordInteraction): void { }
 
     private canPieceMoveTo(piece: number, selectedMove: Move): MoveCheck {
         const blackPiece = piece < 10;
@@ -473,7 +485,7 @@ export default class ChessGame extends GameBase {
     }
 
     private getDisplayForTurn(): string {
-        return this.player1Turn ? this.gameStarter.username : (this.isMultiplayerGame ? this.player2?.username ?? 'ERR' : 'CPU');
+        return this.player1Turn ? this.gameStarter.username : (this.player2 ? this.player2?.username ?? 'ERR' : 'CPU');
     }
 }
 

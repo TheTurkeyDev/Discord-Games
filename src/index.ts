@@ -6,7 +6,6 @@ import MinesweeperGame from './minesweeper';
 import Connect4Game from './connect4';
 import ChessGame from './chess';
 import TicTacToeGame from './tic-tac-toe';
-import express from 'express';
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import FloodGame from './flood';
@@ -58,9 +57,9 @@ function initCommands(appId: Snowflake) {
     const ticTacToeCommand = new DiscordApplicationCommand(appId, 'tictactoe', 'Play Tic-Tac-Toe');
     ticTacToeCommand.addOption(vsSubCommand);
     client.createGlobalCommand(ticTacToeCommand);
-    // const chessCommand = new DiscordApplicationCommand(appId, 'chess', 'Play Chess');
-    // chessCommand.addOption(vsSubCommand);
-    // client.createGlobalCommand(chessCommand);
+    const chessCommand = new DiscordApplicationCommand(appId, 'chess', 'Play Chess');
+    chessCommand.addOption(vsSubCommand);
+    client.createGlobalCommand(chessCommand);
     client.createGlobalCommand(new DiscordApplicationCommand(appId, 'flood', 'Play Flood'));
     client.createGlobalCommand(new DiscordApplicationCommand(appId, '2048', 'Play 2048'));
 }
@@ -70,7 +69,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
 
     if (interaction.isAppCommand()) {
         if (!interaction.guild_id) {
-            interaction.respond({ content: 'This command can only be run inside a guild!' });
+            interaction.respond({ content: 'This command can only be run inside a guild!' }).catch(console.log);
             return;
         }
 
@@ -78,7 +77,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
         const userId = interaction.member?.user?.id ?? interaction.user?.id;
         const command = interaction.data?.name;
         if (!command || !userId) {
-            interaction.respond({ content: 'The command or user was missing somehow.... awkward...' });
+            interaction.respond({ content: 'The command or user was missing somehow.... awkward...' }).catch(console.log);
             return;
         }
         if (Object.keys(commandGameMap).includes(command)) {
@@ -88,7 +87,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
             let player2: DiscordUser | undefined;
             if (player2Option) {
                 if (!game.doesSupportMultiplayer()) {
-                    interaction.respond({ content: 'Sorry that game is not a multiplayer game!' });
+                    interaction.respond({ content: 'Sorry that game is not a multiplayer game!' }).catch(console.log);
                     return;
                 }
                 else {
@@ -97,22 +96,26 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                     player2 = player2Id && users ? users[player2Id] : undefined;
                 }
             }
+            if (userId === player2?.id) {
+                interaction.respond({ content: 'You cannot play against yourself!' }).catch(console.log);
+                return;
+            }
 
             if (!playerGameMap.has(guildId))
                 playerGameMap.set(guildId, new Map<Snowflake, GameBase>());
 
             if (userGame) {
-                interaction.respond({ content: 'You must either finish or end your current game (!end) before you can play another!' });
+                interaction.respond({ content: 'You must either finish or end your current game (!end) before you can play another!' }).catch(console.log);
                 return;
             }
             else if (player2 && playerGameMap.get(guildId)?.has(player2.id)) {
-                interaction.respond({ content: 'The person you are trying to play against is already in a game!' });
+                interaction.respond({ content: 'The person you are trying to play against is already in a game!' }).catch(console.log);
                 return;
             }
 
             const foundGame = Array.from(playerGameMap.get(guildId)?.values() ?? []).find(g => g.getGameId() === game.getGameId());
             if (foundGame !== undefined && foundGame.isInGame()) {
-                interaction.respond({ content: 'Sorry, there can only be 1 instance of a game at a time!' });
+                interaction.respond({ content: 'Sorry, there can only be 1 instance of a game at a time!' }).catch(console.log);
                 return;
             }
 
@@ -135,19 +138,19 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                         playerGame.delete(game.player2.id);
                 }
                 playerGame.delete(userId);
-                interaction.respond({ content: 'Your game was ended!' }).catch(e => console.log(e));
+                interaction.respond({ content: 'Your game was ended!' }).catch(console.log);
                 return;
             }
-            interaction.respond({ content: 'Sorry! You must be in a game first!' }).catch(e => console.log(e));
+            interaction.respond({ content: 'Sorry! You must be in a game first!' }).catch(console.log);
             return;
         }
         else if (command === 'listgames') {
             const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Avilable Games')
-                .setDescription('Snake\nHangman\nConnect4\nMinesweeper\nChess\nTic-Tac-Toe\nFlood\n2048')
+                .setDescription('- Snake\n- Hangman\n- Connect4\n- Minesweeper\n- Chess\n- Tic-Tac-Toe\n- Flood\n- 2048')
                 .setTimestamp();
-            interaction.respond({ embeds: [embed] }).catch(e => console.log(e));
+            interaction.respond({ embeds: [embed] }).catch(console.log);
         }
         else if (command === 'gamesbot') {
             const embed = new DiscordEmbed()
@@ -155,12 +158,16 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 .setTitle('Games Bot')
                 .setDescription('Welcome to GamesBot!\nTODO put more here')
                 .setTimestamp();
-            interaction.respond({ embeds: [embed] }).catch(e => console.log(e));
+            interaction.respond({ embeds: [embed] }).catch(console.log);
         }
+
+        return;
     }
 
-    if (!userGame)
+    if (!userGame) {
+        interaction.deferUpdate().catch(console.log);
         return;
+    }
 
     userGame.onInteraction(interaction);
 });
@@ -220,17 +227,3 @@ const getPlayersGame = (guildId: Snowflake | null, userId: Snowflake): GameBase 
 };
 
 client.login(token);
-
-const app = express();
-const port = 3030;
-
-app.get('/', (req, res) => {
-    res.send('<script>window.close();</script>');
-    if (typeof req.query.col === 'string' && typeof req.query.row === 'string') {
-        minesweeper.makeMove(parseInt(req.query.col), parseInt(req.query.row));
-    }
-});
-
-app.listen(port, () => {
-    console.log(`Minesweeper game listening at http://localhost:${port}`);
-});

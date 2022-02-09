@@ -18,7 +18,7 @@ export default class Connect4Game extends GameBase {
         let str = '';
         if (!this.player2)
             str += 'Note there is no AI for this game, so you are just playing against yourself';
-        str += '\n| . 1 | . 2 | 3 | . 4 | . 5 | 6 | . 7 |\n';
+        str += '\n|1️⃣|2️⃣|3️⃣|4️⃣|5️⃣|6️⃣|7️⃣|\n';
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++)
                 str += '|' + this.gameBoard[y * WIDTH + x];
@@ -74,16 +74,26 @@ export default class Connect4Game extends GameBase {
 
     public onReaction(reaction: DiscordMessageReactionAdd): void { }
     public onInteraction(interaction: DiscordInteraction): void {
+        const sender = interaction.member?.user?.id;
+        const turnPlayerId = this.player1Turn ? this.gameStarter.id : (this.player2 ? this.player2.id : this.gameStarter.id);
+        if (sender !== turnPlayerId) {
+            interaction.deferUpdate();
+            return;
+        }
+
         const customId = interaction.data?.custom_id;
         if (!customId) {
             this.step();
+            interaction.deferUpdate();
             return;
         }
 
         let column = parseInt(customId);
 
-        if (column === undefined)
+        if (column === undefined) {
+            interaction.deferUpdate();
             return;
+        }
 
         column -= 1;
         let placedX = -1;

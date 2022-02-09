@@ -81,6 +81,13 @@ export default class TicTacToeGame extends GameBase {
     public onReaction(reaction: DiscordMessageReactionAdd): void { }
 
     public onInteraction(interaction: DiscordInteraction): void {
+        const sender = interaction.member?.user?.id;
+        const turnPlayerId = this.player1Turn ? this.gameStarter.id : (this.player2 ? this.player2.id : this.gameStarter.id);
+        if (sender !== turnPlayerId) {
+            interaction.deferUpdate().catch(console.log);
+            return;
+        }
+
         const customId = interaction.data?.custom_id;
         if (!customId) {
             this.step(false);

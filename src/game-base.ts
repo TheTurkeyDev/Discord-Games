@@ -34,7 +34,7 @@ export default abstract class GameBase {
         this.onGameEnd = onGameEnd;
         this.inGame = true;
 
-        interaction.respond({ content: 'Game started. Happy Playing!' });
+        interaction.respond({ content: 'Game started. Happy Playing!' }).catch(console.log);
 
         const content = this.getContent();
         interaction.sendMessageInChannel({ embeds: content.embeds, components: content.components }).then(msg => {
@@ -164,7 +164,7 @@ export default abstract class GameBase {
     public createMessageActionRowButton(buttonInfo: string[][]): DiscordMessageActionRow {
         return new DiscordMessageActionRow()
             .addComponents(
-                buttonInfo.map(([id, label]) => new DiscordMessageButton()
+                ...buttonInfo.map(([id, label]) => new DiscordMessageButton()
                     .setCustomId(id)
                     .setLabel(label)
                     .setStyle(DiscordButtonStyle.SECONDARY))
