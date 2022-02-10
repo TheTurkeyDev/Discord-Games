@@ -211,7 +211,7 @@ export default class ChessGame extends GameBase {
         }
 
         this.step(false);
-        interaction.update(this.inGame ? this.getContent() : this.getGameOverContent(this.result)).catch(e => super.handleError(e, 'update interaction'));
+        interaction.update(this.result ? this.getGameOverContent(this.result) : this.getContent()).catch(e => super.handleError(e, 'update interaction'));
     }
 
     private canPieceMoveTo(piece: number, selectedMove: Move): MoveCheck {
