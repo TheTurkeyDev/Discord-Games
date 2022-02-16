@@ -148,7 +148,23 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
             const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Avilable Games')
-                .setDescription('- Snake\n- Hangman\n- Connect4\n- Minesweeper\n- Chess\n- Tic-Tac-Toe\n- Flood\n- 2048')
+                .setDescription(`
+                🐍 - Snake
+                
+                🅰️ - Hangman
+                
+                🔵 - Connect4
+                
+                💣 - Minesweeper
+                
+                ♟️ - Chess
+                
+                ❌ - Tic-Tac-Toe
+                
+                🟪 - Flood
+                
+                8️⃣ - 2048
+                `)
                 .setTimestamp();
             interaction.respond({ embeds: [embed] }).catch(console.log);
         }
@@ -156,7 +172,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
             const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Games Bot')
-                .setDescription('Welcome to GamesBot!\nTODO put more here')
+                .setDescription('Welcome to GamesBot!\nThis bot adds lots of little games that you can play right from your Discord chat!\nUse /listgames to list all available games!\nAll games are started via slash commands and any game can be ended using /endgame.\nOnly 1 instance of each game may be active at a time and a user can only be playing 1 instance of a game at a time')
                 .setTimestamp();
             interaction.respond({ embeds: [embed] }).catch(console.log);
         }
