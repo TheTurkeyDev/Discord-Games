@@ -1,4 +1,4 @@
-import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordMessage, DiscordMessageCreate, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordGuild, PERMISSIONS, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType } from 'discord-minimal';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -10,11 +10,8 @@ import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import FloodGame from './flood';
 import TwentyFortyEightGame from './2048';
-import { DiscordApplicationCommandType } from 'discord-minimal/output/src/custom-types/discord-application-command-type';
 
 const client = new DiscordMinimal([INTENTS.GUILDS, INTENTS.GUILD_MESSAGES, INTENTS.GUILD_MESSAGE_REACTIONS]);
-
-const minesweeper = new MinesweeperGame();
 
 type CommandObject = {
     [key: string]: () => GameBase;
@@ -23,7 +20,7 @@ const commandGameMap: CommandObject = {
     'snake': () => new SnakeGame(),
     'hangman': () => new HangmanGame(),
     'connect4': () => new Connect4Game(),
-    'minesweeper': () => minesweeper,
+    'minesweeper': () => new MinesweeperGame(),
     'chess': () => new ChessGame(),
     'tictactoe': () => new TicTacToeGame(),
     'flood': () => new FloodGame(),
@@ -32,11 +29,9 @@ const commandGameMap: CommandObject = {
 
 const playerGameMap = new Map<Snowflake, Map<Snowflake, GameBase>>();
 
-let botId = -1;
 
 client.on('ready', (ready: DiscordReady) => {
     ready.user.setActivity('!gbhelp');
-    botId = ready.user.id;
     console.log(`Logged in as ${ready.user?.username}!`);
 
     initCommands(ready.application.id);
@@ -105,7 +100,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 playerGameMap.set(guildId, new Map<Snowflake, GameBase>());
 
             if (userGame) {
-                interaction.respond({ content: 'You must either finish or end your current game (!end) before you can play another!' }).catch(console.log);
+                interaction.respond({ content: 'You must either finish or end your current game (`/endgame`) before you can play another!' }).catch(console.log);
                 return;
             }
             else if (player2 && playerGameMap.get(guildId)?.has(player2.id)) {
@@ -149,21 +144,21 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 .setColor('#fc2eff')
                 .setTitle('Avilable Games')
                 .setDescription(`
-                🐍 - Snake
+                🐍 - Snake (/snake)
                 
-                🅰️ - Hangman
+                🅰️ - Hangman (/hangman)
                 
-                🔵 - Connect4
+                🔵 - Connect4 (/connect4)
                 
-                💣 - Minesweeper
+                💣 - Minesweeper (/minesweeper)
                 
-                ♟️ - Chess
+                ♟️ - Chess (/chess)
                 
-                ❌ - Tic-Tac-Toe
+                ❌ - Tic-Tac-Toe (/tictactoe)
                 
-                🟪 - Flood
+                🟪 - Flood (/flood)
                 
-                8️⃣ - 2048
+                8️⃣ - 2048 (/2048)
                 `)
                 .setTimestamp();
             interaction.respond({ embeds: [embed] }).catch(console.log);
@@ -172,7 +167,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
             const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
                 .setTitle('Games Bot')
-                .setDescription('Welcome to GamesBot!\nThis bot adds lots of little games that you can play right from your Discord chat!\nUse /listgames to list all available games!\nAll games are started via slash commands and any game can be ended using /endgame.\nOnly 1 instance of each game may be active at a time and a user can only be playing 1 instance of a game at a time')
+                .setDescription('Welcome to GamesBot!\n\nThis bot adds lots of little games that you can play right from your Discord chat!\n\nUse `/listgames` to list all available games!\n\nAll games are started via slash commands (ex: `/flood`) and any game can be ended using `/endgame`.\n\nOnly 1 instance of each game may be active at a time and a user can only be playing 1 instance of a game at a time')
                 .setTimestamp();
             interaction.respond({ embeds: [embed] }).catch(console.log);
         }
