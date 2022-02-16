@@ -58,13 +58,14 @@ export default class HangmanGame extends GameBase {
         if (this.inGame)
             return;
 
-        fetch('https://api.theturkey.dev/randomword').then(resp => resp.text()).then(word => {
-            this.word = word.toUpperCase();
-            this.guesssed = [];
-            this.wrongs = 0;
+        fetch('https://api.theturkey.dev/randomword').then(resp => resp.text())
+            .then(word => {
+                this.word = word.toUpperCase();
+                this.guesssed = [];
+                this.wrongs = 0;
 
-            super.newGame(interaction, player2, onGameEnd);
-        });
+                super.newGame(interaction, player2, onGameEnd);
+            }).catch(console.log);
     }
 
     protected getContent(): GameContent {
