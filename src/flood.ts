@@ -7,7 +7,7 @@ import { DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle, Disc
 const WIDTH = 13;
 const HEIGHT = 13;
 
-const SQUARES = { 'red_sqaure': '🟥', 'blue_sqaure': '🟦', 'orange_sqaure': '🟧', 'purple_sqaure': '🟪', 'green_sqaure': '🟩' };
+const SQUARES = { 'red_square': '🟥', 'blue_square': '🟦', 'orange_square': '🟧', 'purple_square': '🟪', 'green_square': '🟩' };
 
 export default class FloodGame extends GameBase {
     gameBoard: string[];
