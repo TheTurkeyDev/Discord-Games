@@ -36,10 +36,9 @@ export default class FloodGame extends GameBase {
     protected getContent(): GameContent {
         const row = new DiscordMessageActionRow()
             .addComponents(
-                ...Object.entries(SQUARES).map(([k, v]) => new DiscordMessageButton()
+                ...Object.entries(SQUARES).map(([k, v]) => new DiscordMessageButton(DiscordButtonStyle.SECONDARY)
                     .setCustomId(k)
-                    .setLabel(v)
-                    .setStyle(DiscordButtonStyle.SECONDARY))
+                    .setLabel(v))
             );
 
         const embed = new DiscordEmbed()

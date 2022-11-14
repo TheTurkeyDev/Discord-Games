@@ -160,7 +160,7 @@ export default class Connect4Game extends GameBase {
             }
         }
 
-        //Verticle Check
+        //Vertical Check
         for (let i = Math.max(0, placedY - 3); i <= placedY; i++) {
             const adj = placedX + (i * WIDTH);
             if (i + 3 < HEIGHT) {

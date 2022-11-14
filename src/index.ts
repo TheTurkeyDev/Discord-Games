@@ -1,4 +1,4 @@
-import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType } from 'discord-minimal';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType, createGlobalApplicationCommand } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -40,23 +40,23 @@ client.on('ready', (ready: DiscordReady) => {
 function initCommands(appId: Snowflake) {
     const vsSubCommand = new DiscordApplicationCommandOption('vs', 'User you wish to play against', DiscordApplicationCommandOptionType.USER);
 
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'gamesbot', 'GamesBot help and info'));
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'listgames', 'List available games'));
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'endgame', 'End the game you are currently playing'));
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'snake', 'Play Snake'));
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'hangman', 'Play Hangman'));
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'gamesbot', 'GamesBot help and info'));
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'listgames', 'List available games'));
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'endgame', 'End the game you are currently playing'));
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'snake', 'Play Snake'));
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'hangman', 'Play Hangman'));
     const connect4Command = new DiscordApplicationCommand(appId, 'connect4', 'Play Connect4');
     connect4Command.addOption(vsSubCommand);
-    client.createGlobalCommand(connect4Command);
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'minesweeper', 'Play Minesweeper'));
+    createGlobalApplicationCommand(connect4Command);
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'minesweeper', 'Play Minesweeper'));
     const ticTacToeCommand = new DiscordApplicationCommand(appId, 'tictactoe', 'Play Tic-Tac-Toe');
     ticTacToeCommand.addOption(vsSubCommand);
-    client.createGlobalCommand(ticTacToeCommand);
+    createGlobalApplicationCommand(ticTacToeCommand);
     const chessCommand = new DiscordApplicationCommand(appId, 'chess', 'Play Chess');
     chessCommand.addOption(vsSubCommand);
-    client.createGlobalCommand(chessCommand);
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, 'flood', 'Play Flood'));
-    client.createGlobalCommand(new DiscordApplicationCommand(appId, '2048', 'Play 2048'));
+    createGlobalApplicationCommand(chessCommand);
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, 'flood', 'Play Flood'));
+    createGlobalApplicationCommand(new DiscordApplicationCommand(appId, '2048', 'Play 2048'));
 }
 
 client.on('interactionCreate', (interaction: DiscordInteraction) => {
@@ -142,7 +142,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
         else if (command === 'listgames') {
             const embed = new DiscordEmbed()
                 .setColor('#fc2eff')
-                .setTitle('Avilable Games')
+                .setTitle('Available Games')
                 .setDescription(`
                 🐍 - Snake (/snake)
                 

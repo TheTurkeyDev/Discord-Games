@@ -60,8 +60,7 @@ export default class MinesweeperGame extends GameBase {
 
     protected getContent(): GameContent {
         const row1 = new DiscordMessageActionRow().addComponents(
-            new DiscordSelectMenu()
-                .setCustomId('column')
+            new DiscordSelectMenu('column')
                 .addOptions(
                     new DiscordSelectOption('A', '0').setDefault(this.hoverLoc.x === 0),
                     new DiscordSelectOption('B', '1').setDefault(this.hoverLoc.x === 1),
@@ -75,8 +74,7 @@ export default class MinesweeperGame extends GameBase {
                 )
         );
         const row2 = new DiscordMessageActionRow().addComponents(
-            new DiscordSelectMenu()
-                .setCustomId('row')
+            new DiscordSelectMenu('row')
                 .addOptions(
                     new DiscordSelectOption('1', '0').setDefault(this.hoverLoc.y === 0),
                     new DiscordSelectOption('2', '1').setDefault(this.hoverLoc.y === 1),
@@ -201,7 +199,7 @@ export default class MinesweeperGame extends GameBase {
             this.gameBoard[index] = '💣';
         }
         else {
-            let bombsArround = 0;
+            let bombsAround = 0;
             for (let y = -1; y < 2; y++) {
                 for (let x = -1; x < 2; x++) {
                     if (col + x < 0 || col + x >= WIDTH || row + y < 0 || row + y >= HEIGHT)
@@ -210,10 +208,10 @@ export default class MinesweeperGame extends GameBase {
                         continue;
                     const i2 = (row + y) * WIDTH + (col + x);
                     if (this.bombLocs[i2])
-                        bombsArround++;
+                        bombsAround++;
                 }
             }
-            if (bombsArround == 0) {
+            if (bombsAround == 0) {
                 if (col === this.hoverLoc.x && row === this.hoverLoc.y)
                     this.gameBoard[index] = '🔳';
                 else
@@ -230,28 +228,28 @@ export default class MinesweeperGame extends GameBase {
                     }
                 }
             }
-            else if (bombsArround == 1) {
+            else if (bombsAround == 1) {
                 this.gameBoard[index] = '1️⃣';
             }
-            else if (bombsArround == 2) {
+            else if (bombsAround == 2) {
                 this.gameBoard[index] = '2️⃣';
             }
-            else if (bombsArround == 3) {
+            else if (bombsAround == 3) {
                 this.gameBoard[index] = '3️⃣';
             }
-            else if (bombsArround == 4) {
+            else if (bombsAround == 4) {
                 this.gameBoard[index] = '4️⃣';
             }
-            else if (bombsArround == 5) {
+            else if (bombsAround == 5) {
                 this.gameBoard[index] = '5️⃣';
             }
-            else if (bombsArround == 6) {
+            else if (bombsAround == 6) {
                 this.gameBoard[index] = '6️⃣';
             }
-            else if (bombsArround == 7) {
+            else if (bombsAround == 7) {
                 this.gameBoard[index] = '7️⃣';
             }
-            else if (bombsArround == 8) {
+            else if (bombsAround == 8) {
                 this.gameBoard[index] = '8️⃣';
             }
         }

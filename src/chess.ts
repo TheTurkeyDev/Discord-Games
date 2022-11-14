@@ -20,7 +20,7 @@ export default class ChessGame extends GameBase {
         return '**Welcome to Chess!**\n'
             + '- To play simply use the reactions provided to first select your piece you want to move\n'
             + '- Next hit the check reaction\n'
-            + '- Now select where you want that peice to be moved!\n'
+            + '- Now select where you want that piece to be moved!\n'
             + '- To go back to the piece selection hit the back reaction!\n'
             + '- Hit the check reaction to confirm your movement!\n'
             + '- If the piece dose not move check below to possibly see why!\n'
@@ -50,8 +50,7 @@ export default class ChessGame extends GameBase {
 
     protected getContent(): GameContent {
         const row1 = new DiscordMessageActionRow().addComponents(
-            new DiscordSelectMenu()
-                .setCustomId('from_letter')
+            new DiscordSelectMenu('from_letter')
                 .addOptions(
                     new DiscordSelectOption('From A', '0').setDefault(this.selectedMove.fx === 0),
                     new DiscordSelectOption('From B', '1').setDefault(this.selectedMove.fx === 1),
@@ -64,8 +63,7 @@ export default class ChessGame extends GameBase {
                 )
         );
         const row2 = new DiscordMessageActionRow().addComponents(
-            new DiscordSelectMenu()
-                .setCustomId('from_number')
+            new DiscordSelectMenu('from_number')
                 .addOptions(
                     new DiscordSelectOption('From 1', '0').setDefault(this.selectedMove.fy === 0),
                     new DiscordSelectOption('From 2', '1').setDefault(this.selectedMove.fy === 1),
@@ -78,8 +76,7 @@ export default class ChessGame extends GameBase {
                 )
         );
         const row3 = new DiscordMessageActionRow().addComponents(
-            new DiscordSelectMenu()
-                .setCustomId('to_letter')
+            new DiscordSelectMenu('to_letter')
                 .addOptions(
                     new DiscordSelectOption('To A', '0').setDefault(this.selectedMove.tx === 0),
                     new DiscordSelectOption('To B', '1').setDefault(this.selectedMove.tx === 1),
@@ -92,8 +89,7 @@ export default class ChessGame extends GameBase {
                 )
         );
         const row4 = new DiscordMessageActionRow().addComponents(
-            new DiscordSelectMenu()
-                .setCustomId('to_number')
+            new DiscordSelectMenu('to_number')
                 .addOptions(
                     new DiscordSelectOption('To 1', '0').setDefault(this.selectedMove.ty === 0),
                     new DiscordSelectOption('To 2', '1').setDefault(this.selectedMove.ty === 1),
@@ -106,10 +102,9 @@ export default class ChessGame extends GameBase {
                 )
         );
         const row5 = new DiscordMessageActionRow().addComponents(
-            new DiscordMessageButton()
+            new DiscordMessageButton(DiscordButtonStyle.SECONDARY)
                 .setCustomId('confirm')
                 .setLabel('Confirm')
-                .setStyle(DiscordButtonStyle.SECONDARY)
         );
         return {
             embeds: [new DiscordEmbed()
@@ -327,12 +322,12 @@ export default class ChessGame extends GameBase {
 
         if (Math.abs(xDiff) == Math.abs(yDiff) && pieceAtDiff) {
             const betweenPos = [];
-            const incx = -(xDiff / Math.abs(xDiff));
-            const incy = -(yDiff / Math.abs(yDiff));
-            let j = selectedMove.fy + incy;
-            for (let i = selectedMove.fx + incx; i != selectedMove.tx; i += incx) {
+            const incX = -(xDiff / Math.abs(xDiff));
+            const incY = -(yDiff / Math.abs(yDiff));
+            let j = selectedMove.fy + incY;
+            for (let i = selectedMove.fx + incX; i != selectedMove.tx; i += incX) {
                 betweenPos.push({ x: i, y: j });
-                j += incy;
+                j += incY;
             }
             return this.checkJumps(betweenPos);
         }
@@ -370,14 +365,14 @@ export default class ChessGame extends GameBase {
         this.gameBoard[bestMove.fy * 8 + bestMove.fx] = 0;
     }
 
-    private minimaxRoot(depth: number, isMaximisingPlayer: boolean): Move {
+    private minimaxRoot(depth: number, isMaximizingPlayer: boolean): Move {
         const newGameMoves: Move[] = this.getValidMoves();
         let bestMove = -9999;
         let bestMoveFound!: Move;
 
         newGameMoves.forEach(gameMove => {
             this.makeTempMove(gameMove);
-            const value: number = this.minimax(depth - 1, -10000, 10000, !isMaximisingPlayer);
+            const value: number = this.minimax(depth - 1, -10000, 10000, !isMaximizingPlayer);
             this.undoTempMove();
             if (value >= bestMove) {
                 bestMove = value;
@@ -387,22 +382,22 @@ export default class ChessGame extends GameBase {
         return bestMoveFound;
     }
 
-    private minimax(depth: number, alpha: number, beta: number, isMaximisingPlayer: boolean): number {
+    private minimax(depth: number, alpha: number, beta: number, isMaximizingPlayer: boolean): number {
         if (depth === 0)
             return -this.evaluateBoard();
 
         const newGameMoves: Move[] = this.getValidMoves();
 
-        let bestMove: number = isMaximisingPlayer ? -9999 : 9999;
+        let bestMove: number = isMaximizingPlayer ? -9999 : 9999;
         newGameMoves.forEach(gameMove => {
             this.makeTempMove(gameMove);
 
-            if (isMaximisingPlayer) {
-                bestMove = Math.max(bestMove, this.minimax(depth - 1, alpha, beta, !isMaximisingPlayer));
+            if (isMaximizingPlayer) {
+                bestMove = Math.max(bestMove, this.minimax(depth - 1, alpha, beta, !isMaximizingPlayer));
                 this.undoTempMove();
                 alpha = Math.max(alpha, bestMove);
             } else {
-                bestMove = Math.min(bestMove, this.minimax(depth - 1, alpha, beta, !isMaximisingPlayer));
+                bestMove = Math.min(bestMove, this.minimax(depth - 1, alpha, beta, !isMaximizingPlayer));
                 this.undoTempMove();
                 beta = Math.min(beta, bestMove);
             }

@@ -47,7 +47,7 @@ const reactions = new Map([
 
 export default class HangmanGame extends GameBase {
     private word = '';
-    private guesssed: string[] = [];
+    private guessed: string[] = [];
     private wrongs = 0;
 
     constructor() {
@@ -61,7 +61,7 @@ export default class HangmanGame extends GameBase {
         fetch('https://api.theturkey.dev/randomword').then(resp => resp.text())
             .then(word => {
                 this.word = word.toUpperCase();
-                this.guesssed = [];
+                this.guessed = [];
                 this.wrongs = 0;
 
                 super.newGame(interaction, player2, onGameEnd);
@@ -75,7 +75,7 @@ export default class HangmanGame extends GameBase {
                 .setTitle('Hangman')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
                 .setDescription(this.getDescription())
-                .addField('Letters Guessed', this.guesssed.length == 0 ? '\u200b' : this.guesssed.join(' '))
+                .addField('Letters Guessed', this.guessed.length == 0 ? '\u200b' : this.guessed.join(' '))
                 .addField('How To Play', 'React to this message using the emojis that look like letters (🅰️, 🇹, )')
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
                 .setTimestamp()]
@@ -99,8 +99,8 @@ export default class HangmanGame extends GameBase {
             if (letter === undefined)
                 return;
 
-            if (!this.guesssed.includes(letter)) {
-                this.guesssed.push(letter);
+            if (!this.guessed.includes(letter)) {
+                this.guessed.push(letter);
 
                 if (this.word.indexOf(letter) == -1) {
                     this.wrongs++;
@@ -110,7 +110,7 @@ export default class HangmanGame extends GameBase {
                         return;
                     }
                 }
-                else if (!this.word.split('').map(l => this.guesssed.includes(l) ? l : '_').includes('_')) {
+                else if (!this.word.split('').map(l => this.guessed.includes(l) ? l : '_').includes('_')) {
                     this.gameOver({ result: ResultType.WINNER, name: this.gameStarter.username, score: this.word });
                     return;
                 }
@@ -133,7 +133,7 @@ export default class HangmanGame extends GameBase {
             + '   \n|    '
             + (this.wrongs > 4 ? '👞👞' : ' ')
             + '   \n|     \n|__________\n\n'
-            + this.word.split('').map(l => this.guesssed.includes(l) ? l : '_').join(' ')
+            + this.word.split('').map(l => this.guessed.includes(l) ? l : '_').join(' ')
             + '```';
     }
 

@@ -24,7 +24,7 @@ export default class SnakeGame extends GameBase {
                 this.gameBoard[y * WIDTH + x] = '🟦';
     }
 
-    protected getGameboard(): string {
+    protected getGameBoard(): string {
         let str = '';
         for (let y = 0; y < HEIGHT; y++) {
             for (let x = 0; x < WIDTH; x++) {
@@ -89,7 +89,7 @@ export default class SnakeGame extends GameBase {
                 .setColor('#03ad03')
                 .setTitle('Snake Game')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
-                .setDescription(this.getGameboard())
+                .setDescription(this.getGameBoard())
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
                 .setTimestamp()],
             components: [row]
@@ -102,7 +102,7 @@ export default class SnakeGame extends GameBase {
                 .setColor('#03ad03')
                 .setTitle('Snake Game')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
-                .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameboard()}`)
+                .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameBoard()}`)
                 .setTimestamp()],
             components: []
         };

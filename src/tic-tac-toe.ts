@@ -22,7 +22,7 @@ export default class TicTacToeGame extends GameBase {
         super('tictactoe', true);
     }
 
-    private getGameboardStr(): string {
+    private getGameBoardStr(): string {
         let str = '';
         for (let y = 0; y < 3; y++) {
             for (let x = 0; x < 3; x++) {
@@ -56,7 +56,7 @@ export default class TicTacToeGame extends GameBase {
                 .setTitle('Tic-Tac-Toe')
                 .setDescription(this.message)
                 .addField('Turn:', this.getTurn())
-                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=-1&p2=-1`)
+                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameBoardStr()}&p1=-1&p2=-1`)
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
                 .setFooter(`Currently Playing: ${this.gameStarter.username}`)
                 .setTimestamp()],
@@ -71,7 +71,7 @@ export default class TicTacToeGame extends GameBase {
                 .setColor('#ab0e0e')
                 .setTitle('Tic-Tac-Toe')
                 .setDescription('GAME OVER! ' + this.getWinnerText(result))
-                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameboardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
+                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameBoardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
                 .setTimestamp()],
             components: []
@@ -127,9 +127,9 @@ export default class TicTacToeGame extends GameBase {
             //Flip the turn back to the last player to place a piece
             this.player1Turn = !this.player1Turn;
             if (this.hasWon(PLAYER_2) || this.hasWon(PLAYER_1))
-                this.gameOver({ result: ResultType.WINNER, name: this.getTurn(), score: this.getGameboardStr() }, interaction);
+                this.gameOver({ result: ResultType.WINNER, name: this.getTurn(), score: this.getGameBoardStr() }, interaction);
             else
-                this.gameOver({ result: ResultType.TIE, score: this.getGameboardStr() }, interaction);
+                this.gameOver({ result: ResultType.TIE, score: this.getGameBoardStr() }, interaction);
         }
         else {
             this.step(false);

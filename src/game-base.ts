@@ -63,7 +63,7 @@ export default abstract class GameBase {
                     this.gameOver({ result: ResultType.DELETED, error: 'Message was deleted!' });
                     break;
                 case 10062:
-                    console.log('Unkown Interaction??');
+                    console.log('Unknown Interaction??');
                     break;
                 case 50001:
                     if (this.gameMessage)
@@ -150,7 +150,7 @@ export default abstract class GameBase {
     }
 
     public getMessageId(): Snowflake {
-        return this.gameMessage?.id ?? -1;
+        return this.gameMessage?.id ?? '';
     }
 
     public isInGame(): boolean {
@@ -164,10 +164,9 @@ export default abstract class GameBase {
     public createMessageActionRowButton(buttonInfo: string[][]): DiscordMessageActionRow {
         return new DiscordMessageActionRow()
             .addComponents(
-                ...buttonInfo.map(([id, label]) => new DiscordMessageButton()
+                ...buttonInfo.map(([id, label]) => new DiscordMessageButton(DiscordButtonStyle.SECONDARY)
                     .setCustomId(id)
-                    .setLabel(label)
-                    .setStyle(DiscordButtonStyle.SECONDARY))
+                    .setLabel(label))
             );
     }
 }
