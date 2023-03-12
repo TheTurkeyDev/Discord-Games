@@ -50,7 +50,7 @@ export default class TwentyFortyEightGame extends GameBase {
                 .setTitle('2048')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
                 .setImage(`https://api.theturkey.dev/discordgames/gen2048?gb=${this.gameBoard.join(',')}`)
-                .setDescription(`GAME OVER!\nScore: ${this.score}`)
+                .setDescription(`GAME OVER!\n${this.getWinnerText(result)}\nScore: ${this.score}`)
                 .setTimestamp()],
             components: []
         };
