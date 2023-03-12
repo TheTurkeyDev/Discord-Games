@@ -1,8 +1,7 @@
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle } from 'discord-minimal';
+import { DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordInteractionResponseMessageData } from 'discord-minimal';
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
-import { GameContent } from './game-content';
 
 const NO_MOVE = 0;
 const PLAYER_1 = 1;
@@ -45,37 +44,35 @@ export default class TicTacToeGame extends GameBase {
         super.newGame(interaction, player2, onGameEnd);
     }
 
-    protected getContent(): GameContent {
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
+            .setColor('#ab0e0e')
+            .setTitle('Tic-Tac-Toe')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
+            .setTimestamp();
+    }
+
+    protected getContent(): DiscordInteractionResponseMessageData {
         const row1 = super.createMessageActionRowButton([['1', '1️⃣'], ['2', '2️⃣'], ['3', '3️⃣']]);
         const row2 = super.createMessageActionRowButton([['4', '4️⃣'], ['5', '5️⃣'], ['6', '6️⃣']]);
         const row3 = super.createMessageActionRowButton([['7', '7️⃣'], ['8', '8️⃣'], ['9', '9️⃣']]);
 
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#ab0e0e')
-                .setTitle('Tic-Tac-Toe')
-                .setDescription(this.message)
-                .addField('Turn:', this.getTurn())
-                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameBoardStr()}&p1=-1&p2=-1`)
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
-                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()],
-            components: [row1, row2, row3]
-        };
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed()
+            .setDescription(this.message)
+            .addField('Turn:', this.getTurn())
+            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameBoardStr()}&p1=-1&p2=-1`)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)];
+        resp.components = [row1, row2, row3];
+        return resp;
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
-
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#ab0e0e')
-                .setTitle('Tic-Tac-Toe')
-                .setDescription('GAME OVER! ' + this.getWinnerText(result))
-                .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameBoardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tgY5rpPixlA')
-                .setTimestamp()],
-            components: []
-        };
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed()
+            .setDescription('GAME OVER! ' + this.getWinnerText(result))
+            .setImage(`https://api.theturkey.dev/discordgames/gentictactoeboard?gb=${this.getGameBoardStr()}&p1=${this.winningPoints.x}&p2=${this.winningPoints.y}`)];
+        return resp;
     }
 
     public onReaction(reaction: DiscordMessageReactionAdd): void { }
@@ -84,7 +81,7 @@ export default class TicTacToeGame extends GameBase {
         const sender = interaction.member?.user?.id;
         const turnPlayerId = this.player1Turn ? this.gameStarter.id : (this.player2 ? this.player2.id : this.gameStarter.id);
         if (sender !== turnPlayerId) {
-            interaction.deferUpdate().catch(console.log);
+            interaction.deferUpdate().catch(() => console.log('Failed to defer interaction for wrong player!'));
             return;
         }
 

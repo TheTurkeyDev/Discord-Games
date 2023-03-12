@@ -1,6 +1,4 @@
-import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser, Snowflake, DiscordButtonStyle } from 'discord-minimal';
-
-import { GameContent } from './game-content';
+import { DiscordAPIError, DiscordInteraction, DiscordMessage, DiscordMessageActionRow, DiscordMessageButton, DiscordMessageReactionAdd, DiscordUser, Snowflake, DiscordButtonStyle, DiscordInteractionResponseMessageData } from 'discord-minimal';
 import GameResult, { ResultType } from './game-result';
 
 export default abstract class GameBase {
@@ -17,8 +15,8 @@ export default abstract class GameBase {
 
     protected gameTimeoutId: NodeJS.Timeout | undefined;
 
-    protected abstract getContent(): GameContent;
-    protected abstract getGameOverContent(result: GameResult): GameContent;
+    protected abstract getContent(): DiscordInteractionResponseMessageData;
+    protected abstract getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData;
     public abstract onReaction(reaction: DiscordMessageReactionAdd): void;
     public abstract onInteraction(interaction: DiscordInteraction): void;
 
@@ -34,7 +32,10 @@ export default abstract class GameBase {
         this.onGameEnd = onGameEnd;
         this.inGame = true;
 
-        interaction.respond({ content: 'Game started. Happy Playing!' }).catch(console.log);
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.content = 'Game started. Happy Playing!';
+
+        interaction.respond(resp).catch(console.log);
 
         const content = this.getContent();
         interaction.sendMessageInChannel({ embeds: content.embeds, components: content.components }).then(msg => {

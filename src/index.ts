@@ -179,9 +179,10 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 8️⃣ - 2048 (/2048)
                 `)
                 .setTimestamp();
+
             const resp = new DiscordInteractionResponseMessageData();
             resp.embeds = [embed];
-            interaction.respond(resp).catch(console.log);
+            interaction.respond(resp).catch(_ => console.log('Failed to send list games'));
         }
         else if (command === 'gamesbot') {
             const embed = new DiscordEmbed()
@@ -191,7 +192,7 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 .setTimestamp();
             const resp = new DiscordInteractionResponseMessageData();
             resp.embeds = [embed];
-            interaction.respond(resp).catch(console.log);
+            interaction.respond(resp).catch(_ => console.log('Failed to send games bot'));
         }
 
         return;

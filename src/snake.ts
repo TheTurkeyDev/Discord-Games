@@ -1,8 +1,7 @@
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle } from 'discord-minimal';
+import { DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordInteractionResponseMessageData } from 'discord-minimal';
 import GameBase from './game-base';
 import Position from './position';
 import GameResult, { ResultType } from './game-result';
-import { GameContent } from './game-content';
 
 const WIDTH = 15;
 const HEIGHT = 10;
@@ -19,9 +18,7 @@ export default class SnakeGame extends GameBase {
         this.snake.push({ x: 5, y: 5 });
         this.snakeLength = 1;
         this.score = 0;
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                this.gameBoard[y * WIDTH + x] = '🟦';
+        this.gameBoard = Array.from({ length: WIDTH * HEIGHT }, () => '🟦');
     }
 
     protected getGameBoard(): string {
@@ -62,9 +59,10 @@ export default class SnakeGame extends GameBase {
     }
 
     private newAppleLoc(): void {
-        let newApplePos = { x: 0, y: 0 };
+        const newApplePos = { x: 0, y: 0 };
         do {
-            newApplePos = { x: Math.floor(Math.random() * WIDTH), y: Math.floor(Math.random() * HEIGHT) };
+            newApplePos.x = Math.floor(Math.random() * WIDTH);
+            newApplePos.y = Math.floor(Math.random() * HEIGHT);
         } while (this.isLocInSnake(newApplePos));
 
         this.apple.x = newApplePos.x;
@@ -81,32 +79,29 @@ export default class SnakeGame extends GameBase {
         super.newGame(interaction, player2, onGameEnd);
     }
 
-    protected getContent(): GameContent {
-        const row = super.createMessageActionRowButton([['left', '⬅️'], ['up', '⬆️'], ['right', '➡️'], ['down', '⬇️']]);
-
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#03ad03')
-                .setTitle('Snake Game')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
-                .setDescription(this.getGameBoard())
-                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()],
-            components: [row]
-        };
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
+            .setColor('#03ad03')
+            .setTitle('Snake Game')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
+            .setTimestamp();
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#03ad03')
-                .setTitle('Snake Game')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
-                .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameBoard()}`)
-                .setTimestamp()
-                .setFooter(`Player: ${this.gameStarter.username}`)],
-            components: []
-        };
+    protected getContent(): DiscordInteractionResponseMessageData {
+        const row = super.createMessageActionRowButton([['left', '⬅️'], ['up', '⬆️'], ['right', '➡️'], ['down', '⬇️']]);
+
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed()
+            .setDescription(this.getGameBoard())
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)];
+        resp.components = [row];
+        return resp;
+    }
+
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed().setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameBoard()}`).setFooter(`Player: ${this.gameStarter.username}`)];
+        return resp;
     }
 
     protected step(): void {

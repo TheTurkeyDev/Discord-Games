@@ -1,8 +1,7 @@
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import fetch from 'node-fetch';
-import { GameContent } from './game-content';
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction } from 'discord-minimal';
+import { DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordInteractionResponseMessageData } from 'discord-minimal';
 
 //unicode fun...
 const reactions = new Map([
@@ -65,32 +64,31 @@ export default class HangmanGame extends GameBase {
                 this.wrongs = 0;
 
                 super.newGame(interaction, player2, onGameEnd);
-            }).catch(console.log);
+            }).catch(() => console.log('Failed to fetch random word!'));
     }
 
-    protected getContent(): GameContent {
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#db9a00')
-                .setTitle('Hangman')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
-                .setDescription(this.getDescription())
-                .addField('Letters Guessed', this.guessed.length == 0 ? '\u200b' : this.guessed.join(' '))
-                .addField('How To Play', 'React to this message using the emojis that look like letters (🅰️, 🇹, )')
-                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()]
-        };
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
+            .setColor('#db9a00')
+            .setTitle('Hangman')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
+            .setTimestamp();
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#db9a00')
-                .setTitle('Hangman')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=0G3gD4KJ59U')
-                .setDescription(`${this.getWinnerText(result)}\n\nThe Word was:\n${this.word}\n\n${this.getDescription()}`)
-                .setTimestamp()]
-        };
+    protected getContent(): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed()
+            .setDescription(this.getDescription())
+            .addField('Letters Guessed', this.guessed.length == 0 ? '\u200b' : this.guessed.join(' '))
+            .addField('How To Play', 'React to this message using the emojis that look like letters (🅰️, 🇹, )')
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)];
+        return resp;
+    }
+
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed().setDescription(`${this.getWinnerText(result)}\n\nThe Word was:\n${this.word}\n\n${this.getDescription()}`)];
+        return resp;
     }
 
     private makeGuess(reaction: string) {

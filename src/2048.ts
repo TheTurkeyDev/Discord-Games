@@ -1,8 +1,7 @@
-import { DiscordMessageActionRow, DiscordMessageButton, DiscordEmbed, DiscordButtonStyle, DiscordInteraction, DiscordMessageReactionAdd } from 'discord-minimal';
+import { DiscordEmbed, DiscordInteraction, DiscordInteractionResponseMessageData, DiscordMessageReactionAdd } from 'discord-minimal';
 
 import { Direction, oppositeDir } from './direction';
 import GameBase from './game-base';
-import { GameContent } from './game-content';
 import GameResult, { ResultType } from './game-result';
 import Position, { isInside, move, posEqual } from './position';
 
@@ -16,51 +15,45 @@ export default class TwentyFortyEightGame extends GameBase {
 
     constructor() {
         super('2048', false);
-        this.gameBoard = [];
         this.mergedPos = [];
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                this.gameBoard[y * WIDTH + x] = 0;
+        this.gameBoard = Array.from({ length: WIDTH * HEIGHT }, () => 0);
         this.placeRandomNewTile();
         this.score = 0;
     }
 
-    protected getContent(): GameContent {
-        const row = super.createMessageActionRowButton([['left', '⬅️'], ['up', '⬆️'], ['right', '➡️'], ['down', '⬇️']]);
-
-        const embed = new DiscordEmbed()
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
             .setColor('#f2e641')
             .setTitle('2048')
             .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
             .setImage(`https://api.theturkey.dev/discordgames/gen2048?gb=${this.gameBoard.join(',')}`)
-            .addField('Score:', this.score.toString())
-            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
             .setTimestamp();
-
-        return {
-            embeds: [embed],
-            components: [row]
-        };
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#f2e641')
-                .setTitle('2048')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
-                .setImage(`https://api.theturkey.dev/discordgames/gen2048?gb=${this.gameBoard.join(',')}`)
-                .setDescription(`GAME OVER!\nScore: ${this.score}`)
-                .setTimestamp()
-                .setFooter(`Player: ${this.gameStarter.username}`)],
-            components: []
-        };
+    protected getContent(): DiscordInteractionResponseMessageData {
+        const row = super.createMessageActionRowButton([['left', '⬅️'], ['up', '⬆️'], ['right', '➡️'], ['down', '⬇️']]);
+
+        const embed = this.getBaseEmbed()
+            .addField('Score:', this.score.toString())
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`);
+
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [embed];
+        resp.components = [row];
+        return resp;
+    }
+
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [new DiscordEmbed().setDescription(`GAME OVER!\nScore: ${this.score}`).setFooter(`Player: ${this.gameStarter.username}`)];
+        return resp;
     }
 
     private placeRandomNewTile() {
-        let newPos = { x: 0, y: 0 };
+        const newPos = { x: 0, y: 0 };
         do {
-            newPos = { x: Math.floor(Math.random() * WIDTH), y: Math.floor(Math.random() * HEIGHT) };
+            newPos.x = Math.floor(Math.random() * WIDTH);
+            newPos.y = Math.floor(Math.random() * HEIGHT);
         } while (this.gameBoard[newPos.y * WIDTH + newPos.x] != 0);
 
         this.gameBoard[newPos.y * WIDTH + newPos.x] = (Math.random() * 100) < 25 ? 2 : 1;
@@ -133,11 +126,7 @@ export default class TwentyFortyEightGame extends GameBase {
 
 
     private isBoardFull(): boolean {
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                if (this.gameBoard[y * WIDTH + x] === 0)
-                    return false;
-        return true;
+        return !this.gameBoard.includes(0);
     }
 
     private numMovesPossible(): number {

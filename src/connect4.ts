@@ -1,7 +1,6 @@
 import GameResult, { ResultType } from './game-result';
 import GameBase from './game-base';
-import { GameContent } from './game-content';
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle } from 'discord-minimal';
+import { DiscordUser, DiscordEmbed, DiscordMessageReactionAdd, DiscordInteraction, DiscordInteractionResponseMessageData } from 'discord-minimal';
 
 const WIDTH = 7;
 const HEIGHT = 7;
@@ -11,7 +10,7 @@ export default class Connect4Game extends GameBase {
 
     constructor() {
         super('connect4', true);
-        this.gameBoard = [];
+        this.gameBoard = Array.from({ length: WIDTH * HEIGHT }, () => '⚪');
     }
 
     private gameBoardToString(): string {
@@ -31,40 +30,36 @@ export default class Connect4Game extends GameBase {
         if (super.isInGame())
             return;
 
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                this.gameBoard[y * WIDTH + x] = '⚪';
-
+        this.gameBoard = Array.from({ length: WIDTH * HEIGHT }, () => '⚪');
         super.newGame(interaction, player2, onGameEnd);
     }
 
-    protected getContent(): GameContent {
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
+            .setColor('#000b9e')
+            .setTitle('Connect-4')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=Sl1ZnvlNalI')
+            .setTimestamp();
+    }
+
+    protected getContent(): DiscordInteractionResponseMessageData {
         const row1 = super.createMessageActionRowButton([['1', '1️⃣'], ['2', '2️⃣'], ['3', '3️⃣'], ['4', '4️⃣']]);
         const row2 = super.createMessageActionRowButton([['5', '5️⃣'], ['6', '6️⃣'], ['7', '7️⃣']]);
 
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#000b9e')
-                .setTitle('Connect-4')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=Sl1ZnvlNalI')
-                .setDescription(this.gameBoardToString())
-                .addField('Turn:', this.getUserDisplay())
-                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()],
-            components: [row1, row2]
-        };
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed()
+            .setDescription(this.gameBoardToString())
+            .addField('Turn:', this.getUserDisplay())
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)];
+        resp.components = [row1, row2];
+        return resp;
+
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#000b9e')
-                .setTitle('Connect-4')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=Sl1ZnvlNalI')
-                .setDescription(`**GAME OVER! ${this.getWinnerText(result)}**\n\n${this.gameBoardToString()}`)
-                .setTimestamp()],
-            components: []
-        };
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed().setDescription(`**GAME OVER! ${this.getWinnerText(result)}**\n\n${this.gameBoardToString()}`)];
+        return resp;
     }
 
     protected step(): void {
@@ -77,21 +72,21 @@ export default class Connect4Game extends GameBase {
         const sender = interaction.member?.user?.id;
         const turnPlayerId = this.player1Turn ? this.gameStarter.id : (this.player2 ? this.player2.id : this.gameStarter.id);
         if (sender !== turnPlayerId) {
-            interaction.deferUpdate();
+            interaction.deferUpdate().catch(e => super.handleError(e, 'defer interaction'));
             return;
         }
 
         const customId = interaction.data?.custom_id;
         if (!customId) {
             this.step();
-            interaction.deferUpdate();
+            interaction.deferUpdate().catch(e => super.handleError(e, 'defer interaction'));
             return;
         }
 
         let column = parseInt(customId);
 
         if (column === undefined) {
-            interaction.deferUpdate();
+            interaction.deferUpdate().catch(e => super.handleError(e, 'defer interaction'));
             return;
         }
 
@@ -122,19 +117,7 @@ export default class Connect4Game extends GameBase {
     }
 
     private getScore(): string {
-        let str = '';
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
-                const chip = this.gameBoard[y * WIDTH + x];
-                if (chip === '⚪')
-                    str += '0';
-                else if (chip === '🔴')
-                    str += '1';
-                else if (chip === '🟡')
-                    str += '2';
-            }
-        }
-        return str;
+        return this.gameBoard.map(chip => chip === '⚪' ? '0' : (chip === '🔴' ? '1' : '2')).join('');
     }
 
     private getUserDisplay(): string {
@@ -195,10 +178,6 @@ export default class Connect4Game extends GameBase {
     }
 
     private isBoardFull(): boolean {
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                if (this.gameBoard[y * WIDTH + x] === '⚪')
-                    return false;
-        return true;
+        return !this.gameBoard.includes('⚪');
     }
 }

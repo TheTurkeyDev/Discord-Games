@@ -1,11 +1,11 @@
-import { DiscordMessage, DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle, DiscordSelectMenu, DiscordSelectOption } from 'discord-minimal';
+import { DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordSelectMenu, DiscordSelectOption, DiscordInteractionResponseMessageData } from 'discord-minimal';
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
-import { GameContent } from './game-content';
 import Position from './position';
 
 const WIDTH = 9;
 const HEIGHT = 8;
+const numberEmotes = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
 
 export default class MinesweeperGame extends GameBase {
 
@@ -16,7 +16,6 @@ export default class MinesweeperGame extends GameBase {
     constructor() {
         super('minesweeper', false);
     }
-
 
     private gameBoardToString(links = true): string {
         let str = '';
@@ -33,12 +32,9 @@ export default class MinesweeperGame extends GameBase {
         if (this.inGame)
             return;
 
-        for (let y = 0; y < HEIGHT; y++) {
-            for (let x = 0; x < WIDTH; x++) {
-                this.gameBoard[y * WIDTH + x] = '⬜';
-                this.bombLocs[y * WIDTH + x] = false;
-            }
-        }
+
+        this.gameBoard = Array.from({ length: WIDTH * HEIGHT }, () => '⬜');
+        this.bombLocs = Array.from({ length: WIDTH * HEIGHT }, () => false);
 
         this.gameBoard[0] = '🟪';
         this.hoverLoc = { x: 0, y: 0 };
@@ -58,58 +54,42 @@ export default class MinesweeperGame extends GameBase {
         super.newGame(interaction, player2, onGameEnd);
     }
 
-    protected getContent(): GameContent {
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
+            .setColor('#c7c7c7')
+            .setTitle('Minesweeper')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
+            .setTimestamp();
+    }
+
+    protected getContent(): DiscordInteractionResponseMessageData {
         const row1 = new DiscordMessageActionRow().addComponents(
             new DiscordSelectMenu('column')
-                .addOptions(
-                    new DiscordSelectOption('A', '0').setDefault(this.hoverLoc.x === 0),
-                    new DiscordSelectOption('B', '1').setDefault(this.hoverLoc.x === 1),
-                    new DiscordSelectOption('C', '2').setDefault(this.hoverLoc.x === 2),
-                    new DiscordSelectOption('D', '3').setDefault(this.hoverLoc.x === 3),
-                    new DiscordSelectOption('E', '4').setDefault(this.hoverLoc.x === 4),
-                    new DiscordSelectOption('F', '5').setDefault(this.hoverLoc.x === 5),
-                    new DiscordSelectOption('G', '6').setDefault(this.hoverLoc.x === 6),
-                    new DiscordSelectOption('H', '7').setDefault(this.hoverLoc.x === 7),
-                    new DiscordSelectOption('I', '8').setDefault(this.hoverLoc.x === 8)
-                )
+                .addOptions(...[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                    new DiscordSelectOption(String.fromCharCode(65 + i), `${i}`).setDefault(this.hoverLoc.x === i)
+                )))
         );
         const row2 = new DiscordMessageActionRow().addComponents(
             new DiscordSelectMenu('row')
-                .addOptions(
-                    new DiscordSelectOption('1', '0').setDefault(this.hoverLoc.y === 0),
-                    new DiscordSelectOption('2', '1').setDefault(this.hoverLoc.y === 1),
-                    new DiscordSelectOption('3', '2').setDefault(this.hoverLoc.y === 2),
-                    new DiscordSelectOption('4', '3').setDefault(this.hoverLoc.y === 3),
-                    new DiscordSelectOption('5', '4').setDefault(this.hoverLoc.y === 4),
-                    new DiscordSelectOption('6', '5').setDefault(this.hoverLoc.y === 5),
-                    new DiscordSelectOption('7', '6').setDefault(this.hoverLoc.y === 6),
-                    new DiscordSelectOption('8', '7').setDefault(this.hoverLoc.y === 7)
-                )
+                .addOptions(...[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                    new DiscordSelectOption(`${i + 1}`, `${i}`).setDefault(this.hoverLoc.y === i)
+                )))
         );
         const row3 = super.createMessageActionRowButton([['uncover', '👆'], ['flag', '🚩']]);
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#c7c7c7')
-                .setTitle('Minesweeper')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
-                .setDescription(this.gameBoardToString())
-                .addField('How To Play:', 'Click on a square above and visit the url to reveal, or flag the tile!', false)
-                .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-                .setTimestamp()],
-            components: [row1, row2, row3]
-        };
+
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed()
+            .setDescription(this.gameBoardToString())
+            .addField('How To Play:', 'Use the below select menus to choose a tile, then click the finger to reveal the tile, or the flag to flag the tile!', false)
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`)];
+        resp.components = [row1, row2, row3];
+        return resp;
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#c7c7c7')
-                .setTitle('Minesweeper')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=j2ylF1AX1RY')
-                .setDescription(`**GAME OVER!**\n${this.getWinnerText(result)}\n\n${this.gameBoardToString(false)}`)
-                .setTimestamp()],
-            components: []
-        };
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed().setDescription(`**GAME OVER!**\n${this.getWinnerText(result)}\n\n${this.gameBoardToString(false)}`)];
+        return resp;
     }
 
     public gameOver(result: GameResult, interaction: DiscordInteraction | undefined = undefined): void {
@@ -187,10 +167,7 @@ export default class MinesweeperGame extends GameBase {
     }
 
     private showBombs(): void {
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                if (this.bombLocs[y * WIDTH + x])
-                    this.gameBoard[y * WIDTH + x] = '💣';
+        this.gameBoard = this.gameBoard.map((v, i) => this.bombLocs[i] ? '💣' : v);
     }
 
     private uncover(col: number, row: number) {
@@ -228,29 +205,8 @@ export default class MinesweeperGame extends GameBase {
                     }
                 }
             }
-            else if (bombsAround == 1) {
-                this.gameBoard[index] = '1️⃣';
-            }
-            else if (bombsAround == 2) {
-                this.gameBoard[index] = '2️⃣';
-            }
-            else if (bombsAround == 3) {
-                this.gameBoard[index] = '3️⃣';
-            }
-            else if (bombsAround == 4) {
-                this.gameBoard[index] = '4️⃣';
-            }
-            else if (bombsAround == 5) {
-                this.gameBoard[index] = '5️⃣';
-            }
-            else if (bombsAround == 6) {
-                this.gameBoard[index] = '6️⃣';
-            }
-            else if (bombsAround == 7) {
-                this.gameBoard[index] = '7️⃣';
-            }
-            else if (bombsAround == 8) {
-                this.gameBoard[index] = '8️⃣';
+            else {
+                this.gameBoard[index] = numberEmotes[bombsAround - 1];
             }
         }
     }

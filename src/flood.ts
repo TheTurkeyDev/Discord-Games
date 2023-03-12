@@ -1,8 +1,7 @@
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
-import { GameContent } from './game-content';
 import Position, { up, down, left, right, isInside } from './position';
-import { DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd } from 'discord-minimal';
+import { DiscordMessageActionRow, DiscordMessageButton, DiscordButtonStyle, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordInteractionResponseMessageData } from 'discord-minimal';
 
 const WIDTH = 13;
 const HEIGHT = 13;
@@ -15,10 +14,7 @@ export default class FloodGame extends GameBase {
 
     constructor() {
         super('flood', false);
-        this.gameBoard = [];
-        for (let y = 0; y < HEIGHT; y++)
-            for (let x = 0; x < WIDTH; x++)
-                this.gameBoard[y * WIDTH + x] = Object.values(SQUARES)[Math.floor(Math.random() * Object.keys(SQUARES).length)];
+        this.gameBoard = Array.from({ length: WIDTH * HEIGHT }, () => Object.values(SQUARES)[Math.floor(Math.random() * Object.keys(SQUARES).length)]);
         this.turn = 1;
     }
 
@@ -33,7 +29,15 @@ export default class FloodGame extends GameBase {
         return str;
     }
 
-    protected getContent(): GameContent {
+    private getBaseEmbed(): DiscordEmbed {
+        return new DiscordEmbed()
+            .setColor('#08b9bf')
+            .setTitle('Flood')
+            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
+            .setTimestamp();
+    }
+
+    protected getContent(): DiscordInteractionResponseMessageData {
         const row = new DiscordMessageActionRow()
             .addComponents(
                 ...Object.entries(SQUARES).map(([k, v]) => new DiscordMessageButton(DiscordButtonStyle.SECONDARY)
@@ -41,33 +45,22 @@ export default class FloodGame extends GameBase {
                     .setLabel(v))
             );
 
-        const embed = new DiscordEmbed()
-            .setColor('#08b9bf')
-            .setTitle('Flood')
-            .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
+        const embed = this.getBaseEmbed()
             .setDescription(this.gameBoardToString())
             .addField('Turn:', this.turn.toString())
-            .setFooter(`Currently Playing: ${this.gameStarter.username}`)
-            .setTimestamp();
+            .setFooter(`Currently Playing: ${this.gameStarter.username}`);
 
-        return {
-            embeds: [embed],
-            components: [row]
-        };
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [embed];
+        resp.components = [row];
+        return resp;
     }
 
-    protected getGameOverContent(result: GameResult): GameContent {
+    protected getGameOverContent(result: GameResult): DiscordInteractionResponseMessageData {
         const turnResp = result.result == ResultType.WINNER ? `Game beat in ${this.turn - 1} turns!` : '';
-        return {
-            embeds: [new DiscordEmbed()
-                .setColor('#08b9bf')
-                .setTitle('Flood')
-                .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
-                .setDescription(`GAME OVER!\n${turnResp}`)
-                .setTimestamp()
-                .setFooter(`Player: ${this.gameStarter.username}`)],
-            components: []
-        };
+        const resp = new DiscordInteractionResponseMessageData();
+        resp.embeds = [this.getBaseEmbed().setDescription(`GAME OVER!\n${turnResp}`).setFooter(`Player: ${this.gameStarter.username}`)];
+        return resp;
     }
 
     public onInteraction(interaction: DiscordInteraction): void {
@@ -98,12 +91,7 @@ export default class FloodGame extends GameBase {
                 }
             }
 
-            let gameOver = true;
-            for (let y = 0; y < HEIGHT; y++)
-                for (let x = 0; x < WIDTH; x++)
-                    if (this.gameBoard[y * WIDTH + x] !== selected[1])
-                        gameOver = false;
-
+            const gameOver = !this.gameBoard.find(t => t !== selected[1]);
             if (gameOver)
                 this.gameOver({ result: ResultType.WINNER, score: (this.turn - 1).toString() }, interaction);
             else
