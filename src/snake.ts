@@ -103,7 +103,8 @@ export default class SnakeGame extends GameBase {
                 .setTitle('Snake Game')
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=tk5c0t72Up4')
                 .setDescription(`**GAME OVER!**\nScore: ${this.score}\n\n${this.getGameBoard()}`)
-                .setTimestamp()],
+                .setTimestamp()
+                .setFooter(`Currently Playing: ${this.gameStarter.username}`)],
             components: []
         };
     }
