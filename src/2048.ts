@@ -51,7 +51,8 @@ export default class TwentyFortyEightGame extends GameBase {
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=zHyKnlUWnp8')
                 .setImage(`https://api.theturkey.dev/discordgames/gen2048?gb=${this.gameBoard.join(',')}`)
                 .setDescription(`GAME OVER!\nScore: ${this.score}`)
-                .setTimestamp()],
+                .setTimestamp()
+                .setFooter(`Player: ${this.gameStarter.username}`)],
             components: []
         };
     }
