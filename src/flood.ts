@@ -65,7 +65,7 @@ export default class FloodGame extends GameBase {
                 .setAuthor('Made By: TurkeyDev', 'https://site.theturkey.dev/images/turkey_avatar.png', 'https://www.youtube.com/watch?v=BCKoXy94PM4')
                 .setDescription(`GAME OVER!\n${turnResp}`)
                 .setTimestamp()
-                .setFooter(`Currently Playing: ${this.gameStarter.username}`)],
+                .setFooter(`Player: ${this.gameStarter.username}`)],
             components: []
         };
     }
