@@ -1,4 +1,4 @@
-import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType, createGlobalApplicationCommand } from 'discord-minimal';
+import { DiscordMinimal, INTENTS, DiscordUser, Snowflake, DiscordEmbed, DiscordReady, DiscordMessageReactionAdd, DiscordInteraction, DiscordMessageDelete, DiscordMessageDeleteBulk, DiscordApplicationCommand, DiscordApplicationCommandOption, DiscordApplicationCommandOptionType, createGlobalApplicationCommand, DiscordInteractionResponseMessageData } from 'discord-minimal';
 import { token } from './config';
 import SnakeGame from './snake';
 import HangmanGame from './hangman';
@@ -64,7 +64,9 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
 
     if (interaction.isAppCommand()) {
         if (!interaction.guild_id) {
-            interaction.respond({ content: 'This command can only be run inside a guild!' }).catch(console.log);
+            const resp = new DiscordInteractionResponseMessageData();
+            resp.content = 'This command can only be run inside a guild!';
+            interaction.respond(resp).catch(console.log);
             return;
         }
 
@@ -72,7 +74,9 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
         const userId = interaction.member?.user?.id ?? interaction.user?.id;
         const command = interaction.data?.name;
         if (!command || !userId) {
-            interaction.respond({ content: 'The command or user was missing somehow.... awkward...' }).catch(console.log);
+            const resp = new DiscordInteractionResponseMessageData();
+            resp.content = 'The command or user was missing somehow.... awkward...';
+            interaction.respond(resp).catch(console.log);
             return;
         }
         if (Object.keys(commandGameMap).includes(command)) {
@@ -82,7 +86,9 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
             let player2: DiscordUser | undefined;
             if (player2Option) {
                 if (!game.doesSupportMultiplayer()) {
-                    interaction.respond({ content: 'Sorry that game is not a multiplayer game!' }).catch(console.log);
+                    const resp = new DiscordInteractionResponseMessageData();
+                    resp.content = 'Sorry that game is not a multiplayer game!';
+                    interaction.respond(resp).catch(console.log);
                     return;
                 }
                 else {
@@ -92,7 +98,9 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 }
             }
             if (userId === player2?.id) {
-                interaction.respond({ content: 'You cannot play against yourself!' }).catch(console.log);
+                const resp = new DiscordInteractionResponseMessageData();
+                resp.content = 'You cannot play against yourself!';
+                interaction.respond(resp).catch(console.log);
                 return;
             }
 
@@ -100,17 +108,23 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 playerGameMap.set(guildId, new Map<Snowflake, GameBase>());
 
             if (userGame) {
-                interaction.respond({ content: 'You must either finish or end your current game (`/endgame`) before you can play another!' }).catch(console.log);
+                const resp = new DiscordInteractionResponseMessageData();
+                resp.content = 'You must either finish or end your current game (`/endgame`) before you can play another!';
+                interaction.respond(resp).catch(console.log);
                 return;
             }
             else if (player2 && playerGameMap.get(guildId)?.has(player2.id)) {
-                interaction.respond({ content: 'The person you are trying to play against is already in a game!' }).catch(console.log);
+                const resp = new DiscordInteractionResponseMessageData();
+                resp.content = 'The person you are trying to play against is already in a game!';
+                interaction.respond(resp).catch(console.log);
                 return;
             }
 
             const foundGame = Array.from(playerGameMap.get(guildId)?.values() ?? []).find(g => g.getGameId() === game.getGameId());
             if (foundGame !== undefined && foundGame.isInGame()) {
-                interaction.respond({ content: 'Sorry, there can only be 1 instance of a game at a time!' }).catch(console.log);
+                const resp = new DiscordInteractionResponseMessageData();
+                resp.content = 'Sorry, there can only be 1 instance of a game at a time!';
+                interaction.respond(resp).catch(console.log);
                 return;
             }
 
@@ -133,10 +147,14 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                         playerGame.delete(game.player2.id);
                 }
                 playerGame.delete(userId);
-                interaction.respond({ content: 'Your game was ended!' }).catch(console.log);
+                const resp = new DiscordInteractionResponseMessageData();
+                resp.content = 'Your game was ended!';
+                interaction.respond(resp).catch(console.log);
                 return;
             }
-            interaction.respond({ content: 'Sorry! You must be in a game first!' }).catch(console.log);
+            const resp = new DiscordInteractionResponseMessageData();
+            resp.content = 'Sorry! You must be in a game first!';
+            interaction.respond(resp).catch(console.log);
             return;
         }
         else if (command === 'listgames') {
@@ -161,7 +179,9 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 8️⃣ - 2048 (/2048)
                 `)
                 .setTimestamp();
-            interaction.respond({ embeds: [embed] }).catch(console.log);
+            const resp = new DiscordInteractionResponseMessageData();
+            resp.embeds = [embed];
+            interaction.respond(resp).catch(console.log);
         }
         else if (command === 'gamesbot') {
             const embed = new DiscordEmbed()
@@ -169,7 +189,9 @@ client.on('interactionCreate', (interaction: DiscordInteraction) => {
                 .setTitle('Games Bot')
                 .setDescription('Welcome to GamesBot!\n\nThis bot adds lots of little games that you can play right from your Discord chat!\n\nUse `/listgames` to list all available games!\n\nAll games are started via slash commands (ex: `/flood`) and any game can be ended using `/endgame`.\n\nOnly 1 instance of each game may be active at a time and a user can only be playing 1 instance of a game at a time')
                 .setTimestamp();
-            interaction.respond({ embeds: [embed] }).catch(console.log);
+            const resp = new DiscordInteractionResponseMessageData();
+            resp.embeds = [embed];
+            interaction.respond(resp).catch(console.log);
         }
 
         return;
