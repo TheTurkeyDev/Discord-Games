@@ -1,4 +1,4 @@
-import { DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordSelectMenu, DiscordSelectOption, DiscordInteractionResponseMessageData } from 'discord-minimal';
+import { DiscordUser, DiscordEmbed, DiscordInteraction, DiscordMessageReactionAdd, DiscordMessageActionRow, DiscordSelectMenu, DiscordSelectOption, DiscordInteractionResponseMessageData, DiscordComponentType } from 'discord-minimal';
 import GameBase from './game-base';
 import GameResult, { ResultType } from './game-result';
 import Position from './position';
@@ -94,6 +94,11 @@ export default class MinesweeperGame extends GameBase {
 
     public gameOver(result: GameResult, interaction: DiscordInteraction | undefined = undefined): void {
         this.resetPosState(this.hoverLoc.y * WIDTH + this.hoverLoc.x);
+        
+        // Get rid of select menu on gameEnd, because too much clutter.
+        const components = this.gameMessage.components;
+        this.gameMessage.components = components.filter(c => c.type !== DiscordComponentType.STRING_SELECT)
+
         super.gameOver(result, interaction);
     }
 
