@@ -105,6 +105,9 @@ export default abstract class GameBase {
         this.inGame = false;
 
         const gameOverContent = this.getGameOverContent(result);
+        // Remove components to clean up the end-game view.
+        if (gameOverContent.components.length)
+            gameOverContent.components = [];
 
         if (result.result !== ResultType.FORCE_END) {
             this.onGameEnd(result);
