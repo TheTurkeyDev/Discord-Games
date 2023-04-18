@@ -94,11 +94,6 @@ export default class MinesweeperGame extends GameBase {
 
     public gameOver(result: GameResult, interaction: DiscordInteraction | undefined = undefined): void {
         this.resetPosState(this.hoverLoc.y * WIDTH + this.hoverLoc.x);
-        
-        // Get rid of select menu on gameEnd, because too much clutter.
-        const components = this.gameMessage.components;
-        this.gameMessage.components = components.filter(c => c.type !== DiscordComponentType.STRING_SELECT)
-
         super.gameOver(result, interaction);
     }
 
