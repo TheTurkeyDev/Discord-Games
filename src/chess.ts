@@ -187,7 +187,7 @@ export default class ChessGame extends GameBase {
             case 5:
                 // eslint-disable-next-line no-case-declarations
                 const rookMove = this.checkRookMove(blackPiece, selectedMove, true);
-                if (rookMove.valid)
+                if (!rookMove.valid)
                     return this.checkBishopMove(blackPiece, selectedMove, true);
                 return rookMove;
             case 6:
