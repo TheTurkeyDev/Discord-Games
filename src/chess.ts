@@ -52,13 +52,15 @@ export default class ChessGame extends GameBase {
 
     private getLetterOptions(to: boolean): DiscordSelectOption[] {
         return [0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-            new DiscordSelectOption(`${to ? 'To' : 'From'} ${String.fromCharCode(65 + i)}`, `${i}`).setDefault(this.selectedMove.tx === i)
+            new DiscordSelectOption(`${to ? 'To' : 'From'} ${String.fromCharCode(65 + i)}`, `${i}`)
+                .setDefault((to ? this.selectedMove.tx : this.selectedMove.fx) === i)
         ));
     }
 
     private getNumberOptions(to: boolean): DiscordSelectOption[] {
         return [0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-            new DiscordSelectOption(`${to ? 'To' : 'From'} ${i + 1}`, `${i}`).setDefault(this.selectedMove.ty === i)
+            new DiscordSelectOption(`${to ? 'To' : 'From'} ${i + 1}`, `${i}`)
+                .setDefault((to ? this.selectedMove.ty : this.selectedMove.fy) === i)
         ));
     }
 
