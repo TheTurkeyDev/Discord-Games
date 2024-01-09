@@ -135,7 +135,7 @@ export default class Connect4Game extends GameBase {
 
         //Horizontal Check
         const y = placedY * WIDTH;
-        for (let i = Math.max(0, placedX - 3); i <= placedX; i++) {
+        for (let i = Math.max(0, placedX - 3); i <= Math.min(placedX, WIDTH - 1); i++) {
             const adj = i + y;
             if (i + 3 < WIDTH) {
                 if (this.gameBoard[adj] === chip && this.gameBoard[adj + 1] === chip && this.gameBoard[adj + 2] === chip && this.gameBoard[adj + 3] === chip)
@@ -144,7 +144,7 @@ export default class Connect4Game extends GameBase {
         }
 
         //Vertical Check
-        for (let i = Math.max(0, placedY - 3); i <= placedY; i++) {
+        for (let i = Math.max(0, placedY - 3); i <= Math.min(placedY, HEIGHT - 1); i++) {
             const adj = placedX + (i * WIDTH);
             if (i + 3 < HEIGHT) {
                 if (this.gameBoard[adj] === chip && this.gameBoard[adj + WIDTH] === chip && this.gameBoard[adj + (2 * WIDTH)] === chip && this.gameBoard[adj + (3 * WIDTH)] === chip)
@@ -156,6 +156,8 @@ export default class Connect4Game extends GameBase {
         for (let i = -3; i <= 0; i++) {
             const adjX = placedX + i;
             const adjY = placedY + i;
+            if(adjX < 0 || adjY < 0)
+                continue;
             const adj = adjX + (adjY * WIDTH);
             if (adjX + 3 < WIDTH && adjY + 3 < HEIGHT) {
                 if (this.gameBoard[adj] === chip && this.gameBoard[adj + WIDTH + 1] === chip && this.gameBoard[adj + (2 * WIDTH) + 2] === chip && this.gameBoard[adj + (3 * WIDTH) + 3] === chip)
@@ -167,6 +169,8 @@ export default class Connect4Game extends GameBase {
         for (let i = -3; i <= 0; i++) {
             const adjX = placedX + i;
             const adjY = placedY - i;
+            if(adjX < 0 || adjY < 0)
+                continue;
             const adj = adjX + (adjY * WIDTH);
             if (adjX + 3 < WIDTH && adjY - 3 >= 0) {
                 if (this.gameBoard[adj] === chip && this.gameBoard[adj - WIDTH + 1] === chip && this.gameBoard[adj - (2 * WIDTH) + 2] === chip && this.gameBoard[adj - (3 * WIDTH) + 3] === chip)
