@@ -105,6 +105,9 @@ export default abstract class GameBase {
         this.inGame = false;
 
         const gameOverContent = this.getGameOverContent(result);
+        // Clean components array if they exist, for a cleaner end-game view.
+        if (gameOverContent.components.length)
+            gameOverContent.components = [];
 
         if (result.result !== ResultType.FORCE_END) {
             this.onGameEnd(result);
